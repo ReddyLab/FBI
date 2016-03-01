@@ -7,7 +7,7 @@ use GffTranscriptReader;
 use ConfigFile;
 
 die "\n
-make-personal-genomes.pl <fbi.config> <vcf-dir> <genes.gff> <out-dir> <IDs.txt> <males.txt>
+make-personal-genomes.pl <fbi.config> <vcf-dir> <genes.gff> <out-dir>
 
 Assumptions:
  * VCF files must be zipped with bgzip and have accompanying tbi indexes
@@ -16,10 +16,9 @@ Assumptions:
      2bit files, they do
  * Your environment variable FBI must point to the FBI dir
  * <out-dir> will be populated with two FASTA files per individual
- * IDs lists the identifiers of the individuals to keep
 "
-  unless @ARGV==6;
-my ($configFile,$vcfDir,$gffFile,$outDir,$IDfile,$MALES)=@ARGV;
+  unless @ARGV==4;
+my ($configFile,$vcfDir,$gffFile,$outDir)=@ARGV;
 
 #==============================================================
 # First, some initialization
@@ -31,6 +30,8 @@ my $CHROM_LENGTHS=$config->lookupOrDie("chr-lengths");
 my $TABIX=$config->lookupOrDie("tabix");
 my $twoBitFile=$config->lookupOrDie("genome");
 my $twoBitToFa=$configFile->lookupOrDie("twoBitToFa");
+my $IDfile=$configFile->lookupOrDie("individuals");
+my $genderFile=$configFile->lookup("gender");
 my %chromLen;
 loadChromLengths($CHROM_LENGTHS);
 my %chrToVCF;
@@ -98,7 +99,8 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   System("$FBI/vcf-to-gcf -i $IDfile -c -v $geneVcfFile $geneGcfFile");
   writeBed6($chr,$begin,$end,$name,$strand,$tempBedFile);
   system("rm $altGeneFasta");
-  System("$FBI/gcf-to-fasta -y $MALES -r $geneGcfFile $twoBitFile $tempBedFile $altGeneFasta >& $outDir/err.out");
+  my $dashY=$genderFile eq "" ? "" : "-y $genderFile";
+  System("$FBI/gcf-to-fasta $dashY -r $geneGcfFile $twoBitFile $tempBedFile $altGeneFasta >& $outDir/err.out");
   my $err=`cat $outDir/err.out`;
   if($err=~/error/) { die }
   system("cat $outDir/err.out >> $outDir/errors.txt");
