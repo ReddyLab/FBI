@@ -15,7 +15,7 @@ Assumptions:
  * In VCF files, chrom names don't begin with \"chr\", but in GFF and
      2bit files, they do
  * Your environment variable \$FBI must point to the FBI dir
- * <out-dir> will be populated with two FASTA files per individual
+ * <out-dir> will be populated with FASTA files
 "
   unless @ARGV==3;
 my ($configFile,$gffFile,$outDir)=@ARGV;
@@ -34,6 +34,8 @@ my $twoBitToFa=$configFile->lookupOrDie("twoBitToFa");
 my $IDfile=$configFile->lookupOrDie("individuals");
 my $genderFile=$configFile->lookup("gender");
 my $vcfDir=$configFile->lookupOrDie("vcf");
+my $ploidy=0+$configFile->lookupOrDie("ploidy");
+if($ploidy<1) { die "invalid ploidy" }
 my %chromLen;
 loadChromLengths($CHROM_LENGTHS);
 my %chrToVCF;
@@ -44,7 +46,7 @@ my $refGeneFasta="$outDir/refgene.fasta";
 my $altGeneFasta="$outDir/altgene.fasta";
 my $tempBedFile="$outDir/temp.bed";
 my $geneVcfFile="$outDir/gene.vcf";#"$outDir/gene.vcf.gz";
-my $geneGcfFile="$outDir/gene.gcf";#"$outDir/gene.gcf.gz";
+my $geneTvfFile="$outDir/gene.tvf";#"$outDir/gene.tvf.gz";
 my $FBI=$ENV{"FBI"};
 my $fastaWriter=new FastaWriter;
 
@@ -68,13 +70,17 @@ my %fastaFiles;
 for(my $i=0 ; $i<$numIndiv ; ++$i) {
   my $indiv=$individuals->[$i];
   next unless $keepIDs{$indiv};
-  my $file1="$outDir/$indiv-1.fasta";
-  my $file2="$outDir/$indiv-2.fasta";
-  $fastaFiles{$indiv}=[$file1,$file2];
+  $fastsaFiles{$indiv}=[];
+  for(my $j=1 ; $j<=$ploidy ; ++$j) {
+    my $file="$outDir/$indiv-$j.fasta";
+    push @{$fastaFiles{$indiv}},$file;
+  }
 }
-my $file1="$outDir/ref-1.fasta";
-my $file2="$outDir/ref-2.fasta";
-$fastaFiles{"reference"}=[$file1,$file2];
+$fastaFiles{"reference"}=[];
+for(my $j=1 ; $j<=$ploidy ; ++$j) {
+  my $file="$outDir/ref-$j.fasta";
+  push @{$fastaFiles{"reference"}},$file;
+}
 
 #==============================================================
 # Process each gene
@@ -97,11 +103,11 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   my $chrVcfFile=$chrToVCF{$chr};
   writeBed3($chr,$begin,$end,$tempBedFile);
   System("$TABIX -h $chrVcfFile -R $tempBedFile > $geneVcfFile");
-  System("$FBI/vcf-to-gcf -i $IDfile -c -v $geneVcfFile $geneGcfFile");
+  System("$FBI/vcf-to-tvf -i $IDfile -c -v $geneVcfFile $geneTvfFile");
   writeBed6($chr,$begin,$end,$name,$strand,$tempBedFile);
   system("rm $altGeneFasta");
   my $dashY=$genderFile eq "" ? "" : "-y $genderFile";
-  System("$FBI/gcf-to-fasta $dashY -r $geneGcfFile $twoBitFile $tempBedFile $altGeneFasta >& $outDir/err.out");
+  System("$FBI/tvf-to-fasta $dashY -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $outDir/err.out");
   my $err=`cat $outDir/err.out`;
   if($err=~/error/) { die }
   system("cat $outDir/err.out >> $outDir/errors.txt");
@@ -125,8 +131,6 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
     undef $indivID; undef $alleleNum ; undef $geneID ; undef $coord;
   }
   $fastaReader->close();
-
-  my $numIndiv=`wc -l $geneGcfFile`-1;
 }
 
 #==============================================================
@@ -137,7 +141,7 @@ unlink($refGeneFasta);
 unlink($altGeneFasta);
 unlink($tempBedFile);
 unlink($geneVcfFile);
-unlink($geneGcfFile);
+unlink($geneTvfFile);
 
 
 #==============================================================
