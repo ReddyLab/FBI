@@ -17,9 +17,9 @@ all: \
 	BOOM \
 	obj \
 	train-signal-sensor \
-	fbi \
 	vcf-to-tvf \
 	tvf-to-fasta \
+	fbi \
 	map-annotations
 
 BOOM:
