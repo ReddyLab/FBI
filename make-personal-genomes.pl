@@ -7,24 +7,25 @@ use GffTranscriptReader;
 use ConfigFile;
 
 die "\n
-make-personal-genomes.pl <fbi.config> <vcf-dir> <genes.gff> <out-dir>
+make-personal-genomes.pl <fbi.config> <genes.gff> <out-dir>
 
 Assumptions:
  * VCF files must be zipped with bgzip and have accompanying tbi indexes
  * VCF files must contain chromosome in filename, e.g. chr14, chrX, etc.
  * In VCF files, chrom names don't begin with \"chr\", but in GFF and
      2bit files, they do
- * Your environment variable FBI must point to the FBI dir
+ * Your environment variable \$FBI must point to the FBI dir
  * <out-dir> will be populated with two FASTA files per individual
 "
-  unless @ARGV==4;
-my ($configFile,$vcfDir,$gffFile,$outDir)=@ARGV;
+  unless @ARGV==3;
+my ($configFile,$gffFile,$outDir)=@ARGV;
 
 #==============================================================
 # First, some initialization
 #==============================================================
 
 my $VERBOSE=1;
+my $MARGIN_AROUND_GENE=1000;
 my $config=new ConfigFile($configFile);
 my $CHROM_LENGTHS=$config->lookupOrDie("chr-lengths");
 my $TABIX=$config->lookupOrDie("tabix");
@@ -32,13 +33,13 @@ my $twoBitFile=$config->lookupOrDie("genome");
 my $twoBitToFa=$configFile->lookupOrDie("twoBitToFa");
 my $IDfile=$configFile->lookupOrDie("individuals");
 my $genderFile=$configFile->lookup("gender");
+my $vcfDir=$configFile->lookupOrDie("vcf");
 my %chromLen;
 loadChromLengths($CHROM_LENGTHS);
 my %chrToVCF;
 initChrToVCF($vcfDir);
 system("mkdir -p $outDir") unless -e $outDir;
 system("rm -f $outDir/errors.txt");
-my $MARGIN_AROUND_GENE=1000;
 my $refGeneFasta="$outDir/refgene.fasta";
 my $altGeneFasta="$outDir/altgene.fasta";
 my $tempBedFile="$outDir/temp.bed";
