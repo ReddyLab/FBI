@@ -206,16 +206,8 @@ Application::Application()
 {
   // ctor
   randomize();
-
-  /*
-  // testing
-  Variant v("rs001","chr1",100,5);
-  v.addAllele("GA");
-  v.addAllele("G");
-  v.trim();
-  cout<<v<<endl;
-  */
 }
+
 
 
 int Application::main(int argc,char *argv[])

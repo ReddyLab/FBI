@@ -70,7 +70,7 @@ my %fastaFiles;
 for(my $i=0 ; $i<$numIndiv ; ++$i) {
   my $indiv=$individuals->[$i];
   next unless $keepIDs{$indiv};
-  $fastsaFiles{$indiv}=[];
+  $fastaFiles{$indiv}=[];
   for(my $j=1 ; $j<=$ploidy ; ++$j) {
     my $file="$outDir/$indiv-$j.fasta";
     push @{$fastaFiles{$indiv}},$file;
@@ -97,7 +97,7 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   if($end>$chromLen{$chr}) { $end=$chromLen{$chr} }
   my $strand=$gene->getStrand();
   my $name=$gene->getId();
-  print "$name $chr $begin $end\n";
+  #print "$name $chr $begin $end\n";
   writeBed4($chr,$begin,$end,$name,$tempBedFile);
   System("$twoBitToFa -bed=$tempBedFile -noMask $twoBitFile $refGeneFasta");
   my $chrVcfFile=$chrToVCF{$chr};
@@ -107,10 +107,13 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   writeBed6($chr,$begin,$end,$name,$strand,$tempBedFile);
   system("rm $altGeneFasta");
   my $dashY=$genderFile eq "" ? "" : "-y $genderFile";
+  my $errFile="$outDir/err.out";
   System("$FBI/tvf-to-fasta $dashY -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $outDir/err.out");
-  my $err=`cat $outDir/err.out`;
+  my $err=`cat $errFile`;
   if($err=~/error/) { die }
-  system("cat $outDir/err.out >> $outDir/errors.txt");
+  my (%warnings,%errors);
+  loadErrors($errFile,\%warnings,\%errors);
+  system("cat $errFile >> $outDir/errors.txt");
   die unless -e $altGeneFasta;
   die if -z $altGeneFasta;
   my $fastaReader=new FastaReader($altGeneFasta);
@@ -122,8 +125,11 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
     my ($indivID,$alleleNum,$geneID,$coord,$cigar)=($1,$2,$3,$4,$5);
     if($keepIDs{$indivID}) {
       my $file=$fastaFiles{$indivID}->[$alleleNum];
+      my $key="$indivID $geneID";
+      my $numWarn=0+$warnings{$key};
+      my $numErr=0+$errors{$key};
       open(FASTA,">>$file") || die $file;
-      $def=">$geneID /coord=$coord /margin=$MARGIN_AROUND_GENE /cigar=$cigar";
+      $def=">${geneID}_$alleleNum /coord=$coord /margin=$MARGIN_AROUND_GENE /cigar=$cigar /warnings=$numWarn /errors=$numErr";
       $fastaWriter->addToFasta($def,$seq,\*FASTA);
       close(FASTA);
     }
@@ -239,6 +245,21 @@ sub loadIDs
   close(IN);
 }
 #==============================================================
+sub loadErrors
+{
+  my ($filename,$warnings,$errors)=@_;
+  open(IN,$errors) || die;
+  while(<IN>) {
+    chomp;
+    my @fields=split;
+    next unless @fields>=6;
+    my ($severity,$type,$indiv,$gene)=@fields;
+    my $key="$indiv $gene";
+    if($severity=~/WARNING/) { ++$warnings->{$key} }
+    elsif($severity=~/ERROR/) { ++$errors->{$key} }
+  }
+  close(IN);
+}
 #==============================================================
 #==============================================================
 #==============================================================
