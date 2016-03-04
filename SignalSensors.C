@@ -20,17 +20,11 @@ SignalSensors::SignalSensors()
 
 void SignalSensors::setConsensuses()
 {
-  /*
-  SignalSensor *startCodonSensor;
-  SignalSensor *shortStartSensor; // just the ATG
-  SignalSensor *stopCodonSensor;
-  SignalSensor *donorSensor;
-  SignalSensor *acceptorSensor;
-  Set<String> donorConsensuses;
-  Set<String> acceptorConsensuses;
-  Set<String> startCodons;
-  Set<String> stopCodons;
-   */
+  setConsensuses(startCodonSensor,startCodons);
+  setConsensuses(shortStartSensor,startCodons);
+  setConsensuses(stopCodonSensor,stopCodons);
+  setConsensuses(donorSensor,donorConsensuses);
+  setConsensuses(acceptorSensor,acceptorConsensuses);
 }
 
 

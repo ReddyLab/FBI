@@ -94,7 +94,7 @@ void EnumerateAltStructures::findSites(SignalType type,int begin,int end,
   const int contextWindowLen=sensor->getContextWindowLength();
   const int consensusOffset=sensor->getConsensusOffset();
   for(int pos=begin ; pos<=end-contextWindowLen ; ++pos) {
-    if(sensor->consensusOccursAt(genome,pos)) {
+    if(sensor->consensusOccursAt(genome,pos+consensusOffset)) {
       double score=sensor->getLogP(genomeSeq,genome,pos);
       if(score<sensor->getCutoff()) continue;
       TranscriptSignal signal(type,pos+consensusOffset,score);
@@ -166,19 +166,6 @@ void EnumerateAltStructures::compute()
     }
   }
   
-  // ###
-  /*
-  for(int i=0 ; i<numSignals ; ++i) {
-    Vector<TranscriptSignal> &signals=alternatives[i];
-    cout<<"["<<i<<"]";
-    for(Vector<TranscriptSignal>::iterator cur=signals.begin(), end=
-    signals.end() ; cur!=end ; ++cur)
-    cout<<" "<<*cur;
-    cout<<endl;
-  }
-  */
-  // ###
-
   // Enumerate complete transcripts combinatorially
   CombinationIterator iter;
   for(int i=0 ; i<numSignals ; ++i) {
