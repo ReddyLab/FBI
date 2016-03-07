@@ -10,11 +10,11 @@ my $name=ProgramName::get();
 die "$name <model-dir> <ref.multi-fasta> <alt.multi-fasta> <ref.multi-gff> <out.fbi>\n" unless @ARGV==5;
 my ($modelDir,$refFasta,$altFasta,$refGFF,$outFBI)=@ARGV;
 
+my $DEBUG=0;
 my $MAX_TRANSCRIPTS=-1;
 my $MAX_VCF_ERRORS=0;
 my $STOP_AFTER;#="ENST00000526104";
-my $DEBUG=0;
-my $CIA=$ENV{"CIA"};
+my $FBI=$ENV{"FBI"};
 my $refFastaTemp=TempFilename::generate();
 my $altFastaTemp=TempFilename::generate();
 #my $labelingTemp=TempFilename::generate();
@@ -79,11 +79,12 @@ while(1) {
       $revFlag="-c";
     }
     my $errorsFlag=$MAX_VCF_ERRORS>=0 ? "-e $MAX_VCF_ERRORS" : "";
-    my $command="$CIA/fbi -q $errorsFlag $revFlag $modelFile $oneGeneGFF $refFastaTemp $altFastaTemp $gffTemp $fbiTemp";
-    #print "$command\n";
+    my $command="$FBI/fbi -q $errorsFlag $revFlag $modelFile $oneGeneGFF $refFastaTemp $altFastaTemp $gffTemp $fbiTemp";
+    print "$command\n" if $DEBUG;;
     my $err=`$command`;
-    print "$err\n";
-    if($err=~/abort/ || $err=~/INTERNAL ERROR/) { exit }
+    #print "$err\n"
+    if($err=~/abort/ || $err=~/INTERNAL ERROR/ || $err=~/no transcripts/
+       || $err=~/no such file/) { exit }
     die "FBI terminated abnormally" unless $err=~/FBI terminated successfully/;
     System("cat $fbiTemp >> $outFBI");
     #System("cat $tempXML >> $outXML");
@@ -109,7 +110,7 @@ system("date");
 sub System
 {
   my ($cmd)=@_;
-  #print("$cmd\n");
+  print("$cmd\n") if $DEBUG;
   system($cmd);
 }
 
