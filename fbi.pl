@@ -67,7 +67,7 @@ while(1) {
     next unless $STOP_AFTER eq "" || $STOP_AFTER eq $transID;
     ++$totalTranscripts;
     if($MAX_TRANSCRIPTS>0 && $totalTranscripts>$MAX_TRANSCRIPTS) { exit }
-    print "transcript $transID\n";
+    print "transcript $transID\n" if $DEBUG;
     my $gff=$transcript->toGff();
     open(GFF,">$oneGeneGFF") || die "can't write file $oneGeneGFF";
     print GFF "$gff";
@@ -85,7 +85,8 @@ while(1) {
     #print "$err\n"
     if($err=~/abort/ || $err=~/INTERNAL ERROR/ || $err=~/no transcripts/
        || $err=~/no such file/) { exit }
-    die "FBI terminated abnormally" unless $err=~/FBI terminated successfully/;
+    die "FBI terminated abnormally:\n$command" 
+      unless $err=~/FBI terminated successfully/;
     System("cat $fbiTemp >> $outFBI");
     #System("cat $tempXML >> $outXML");
     #my $labeling;
