@@ -675,7 +675,7 @@ SignalSensor *FBI::loadModel(const String &label,ConfigFile &config)
 float FBI::alignProteins(const String &refStr,const String &altStr,
 			 int &matches)
 {
-  if(refStr.length()==0) return 0.0;
+  if(refStr.length()==0 || altStr.length()==0) return 0.0;
   const AminoAlphabet &alphabet=AminoAlphabet::global();
   Sequence refSeq(refStr,alphabet), altSeq(altStr,alphabet);
   BandedSmithWaterman<float> aligner(alphabet,refSeq,altSeq,*substMatrix,
