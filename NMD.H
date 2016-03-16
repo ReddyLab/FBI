@@ -25,7 +25,8 @@ ostream &operator<<(ostream &,NMD_TYPE);
 class NMD {
 public:
   NMD(int dist=50);
-  NMD_TYPE predict(GffTranscript &,const String &genome);
+  NMD_TYPE predict(GffTranscript &,const String &genome,int &distance);
+  void setDistParm(int d) { distParm=d; }
 protected:
   int distParm;
 };

@@ -24,6 +24,7 @@ using namespace BOOM;
 struct AlternativeStructure {
   GffTranscript *transcript;
   ProteinFate proteinFate;
+  int ejcDistance;
   StructureChange structureChange;
   Essex::CompositeNode *msg;
   AlternativeStructure(GffTranscript *,ProteinFate);
@@ -40,6 +41,7 @@ public:
   EnumerateAltStructures(const TranscriptSignals &original,
 			 const String &altGenome,int MAX_SPLICE_SHIFT,
 			 int MIN_EXON_LEN,int MIN_INTRON_LEN,
+			 const int NMD_DISTANCE_PARM,
 			 const SignalSensors &sensors,
 			 bool allowExonSkipping,bool allowIntronRetention,
 			 bool allowCrypticSites);

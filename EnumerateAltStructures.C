@@ -43,6 +43,7 @@ EnumerateAltStructures::EnumerateAltStructures(const TranscriptSignals &trans,
 					       int MAX_SPLICE_SHIFT,
 					       int MIN_EXON_LEN,
 					       int MIN_INTRON_LEN,
+					       const int NMD_DISTANCE_PARM,
 					       const SignalSensors &sensors,
 					       bool allowExonSkipping,
 					       bool allowIntronRetention,
@@ -52,7 +53,8 @@ EnumerateAltStructures::EnumerateAltStructures(const TranscriptSignals &trans,
     MIN_INTRON_LEN(MIN_INTRON_LEN), genomeSeq(genome,DnaAlphabet::global()),
     allowExonSkipping(allowExonSkipping), 
     allowIntronRetention(allowIntronRetention),
-    allowCrypticSites(allowCrypticSites)
+    allowCrypticSites(allowCrypticSites),
+    nmd(NMD_DISTANCE_PARM)
 {
   compute();
 }
@@ -209,9 +211,11 @@ void EnumerateAltStructures::addIfUnique(TranscriptSignals signals)
       return;
     }
   }
-  ProteinFate fate=nmd.predict(*transcript,genome);
+  int ejcDistance;
+  ProteinFate fate=nmd.predict(*transcript,genome,ejcDistance);
   AlternativeStructure *structure=new AlternativeStructure(transcript,fate);
   structure->msg=msg;
+  structure->ejcDistance=ejcDistance;
   structure->structureChange=signals.getChange();
   altStructures.push_back(structure);
 }

@@ -32,8 +32,10 @@ NMD::NMD(int dist)
 
 
 
-NMD_TYPE NMD::predict(GffTranscript &transcript,const String &substrate)
+NMD_TYPE NMD::predict(GffTranscript &transcript,const String &substrate,
+		      int &distance)
 {
+  distance=0;
   const int numExons=transcript.getNumExons();
   if(numExons<1) return NMD_NO_START;
 
@@ -47,7 +49,7 @@ NMD_TYPE NMD::predict(GffTranscript &transcript,const String &substrate)
   NMD_TYPE ret=NMD_NO_STOP;
   while(iter.nextCodon(codon)) {
     if(codon.isStop()) {
-      const int distance=lastEJC-codon.splicedCoord;
+      distance=lastEJC-codon.splicedCoord;
       if(distance>=distParm) ret=NMD_NMD;
       //else if(iter.nextCodon(codon)) ret=NMD_TRUNCATION;
       else ret=NMD_NONE;

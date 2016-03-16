@@ -479,14 +479,17 @@ bool ProjectionChecker::geneIsWellFormed(GffTranscript &transcript,
 					 bool &noStart,bool &noStop,
 					 bool &PTC,bool &badSpliceSite,
 					 Essex::CompositeNode *status,
-					 const SignalSensors &sensors)
+					 const SignalSensors &sensors,
+					 const int nmdDistParm)
 {
   noStart=noStop=PTC=badSpliceSite=false;
   transcript.loadSequence(substrate);
-  NMD nmd;
-  NMD_TYPE nmdType=nmd.predict(transcript,substrate);
+  NMD nmd(nmdDistParm);
+  int ejcDistance;
+  NMD_TYPE nmdType=nmd.predict(transcript,substrate,ejcDistance);
   if(nmdType==NMD_NMD) {
     Essex::CompositeNode *msg=new Essex::CompositeNode("NMD");
+    msg->append("EJC-distance",ejcDistance);
     status->append(msg);
     PTC=true;
     return false;

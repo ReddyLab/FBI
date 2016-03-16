@@ -45,7 +45,7 @@ private:
   SignalSensors sensors;
   String labelingFile;
   String substrate, altDefline, xmlFilename;
-  int MAX_SPLICE_SHIFT, MIN_EXON_LEN, MIN_INTRON_LEN;
+  int MAX_SPLICE_SHIFT, MIN_EXON_LEN, MIN_INTRON_LEN, NMD_DISTANCE_PARM;
   bool allowExonSkipping, allowIntronRetention, allowCrypticSites;
   bool reverseCigar, quiet;
   String CIGAR;
@@ -198,7 +198,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   String msg;
   if(!ProjectionChecker::geneIsWellFormed(*refTrans,refSeqStr,
 					  noStart,noStop,PTC,badSpliceSite,
-					  status,sensors)) {
+					  status,sensors,NMD_DISTANCE_PARM)) {
     if(quiet) return -1;
     status->prepend("bad-annotation");
     referenceIsOK=false;
@@ -246,7 +246,8 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
     if(signals->anyBroken()) {
       appendBrokenSignals(signals,status);
       EnumerateAltStructures enumerator(*signals,altSeqStr,MAX_SPLICE_SHIFT,
-					MIN_EXON_LEN,MIN_INTRON_LEN,sensors,
+					MIN_EXON_LEN,MIN_INTRON_LEN,
+					NMD_DISTANCE_PARM,sensors,
 					allowExonSkipping,allowIntronRetention,
 					allowCrypticSites);
       const Vector<AlternativeStructure*> &altStructures=
@@ -295,9 +296,13 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 	      node->append(fate);
 	    }
 	  }break;
-	  case NMD_NMD:        // premature stop codon & NMD
-	    node->append("fate","NMD");
-	    break;
+	  case NMD_NMD: {       // premature stop codon & NMD
+	    //node->append("fate","NMD");
+	    Essex::CompositeNode *fate=new Essex::CompositeNode("fate");
+	    fate->append("NMD");
+	    fate->append("EJC-distance",s.ejcDistance);
+	    node->append(fate);
+	  }break;
 	  case NMD_TRUNCATION: {// premature stop codon, truncated protein
 	    int matches, len;
 	    String altProtein=s.transcript->getProtein();
@@ -335,9 +340,17 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
       String refProtein, altProtein;
       checker.translate(*refTrans,*altTrans,refProtein,altProtein);
       
-      switch(nmd.predict(*altTrans,altSeqStr)) {
+      int ejcDistance;
+      switch(nmd.predict(*altTrans,altSeqStr,ejcDistance)) {
       case NMD_NONE: break;
-      case NMD_NMD: status->append("premature-stop","NMD"); break;
+      case NMD_NMD: {
+	//status->append("premature-stop","NMD"); break;
+	Essex::CompositeNode *stopNode=
+	  new Essex::CompositeNode("premature-stop");
+	stopNode->append("NMD");
+	stopNode->append("EJC-distance",ejcDistance);
+	status->append(stopNode);
+      } break;
       case NMD_TRUNCATION:  { // ### this is disabled for now
 	int matches, len;
 	alignProteins(refProtein,altProtein,matches);
@@ -621,6 +634,9 @@ void FBI::processConfig(const String &filename)
   MAX_SPLICE_SHIFT=config.getIntOrDie("max-splice-shift");
   MIN_EXON_LEN=config.getIntOrDie("min-exon-length");
   MIN_INTRON_LEN=config.getIntOrDie("min-intron-length");
+  NMD_DISTANCE_PARM=config.isDefined("NMD-distance") ?
+    config.getIntOrDie("NMD-distance") : 50;
+  nmd.setDistParm(NMD_DISTANCE_PARM);
 
   openPenalty=-config.getFloatOrDie("gap-open-penalty");
   extendPenalty=-config.getFloatOrDie("gap-extend-penalty");

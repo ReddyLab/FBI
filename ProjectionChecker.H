@@ -49,7 +49,8 @@ public:
 			       bool &noStart,bool &noStop,
 			       bool &PTC,bool &badSpliceSite,
 			       Essex::CompositeNode *status,
-			       const SignalSensors &);
+			       const SignalSensors &,
+			       const int nmdDistParm);
 protected:
   const SignalSensors &sensors;
   const GffTranscript &refTrans, &altTrans;
