@@ -30,11 +30,11 @@ my $config=new ConfigFile($configFile);
 my $CHROM_LENGTHS=$config->lookupOrDie("chr-lengths");
 my $TABIX=$config->lookupOrDie("tabix");
 my $twoBitFile=$config->lookupOrDie("genome");
-my $twoBitToFa=$configFile->lookupOrDie("twoBitToFa");
-my $IDfile=$configFile->lookupOrDie("individuals");
-my $genderFile=$configFile->lookup("gender");
-my $vcfDir=$configFile->lookupOrDie("vcf");
-my $ploidy=0+$configFile->lookupOrDie("ploidy");
+my $twoBitToFa=$config->lookupOrDie("twoBitToFa");
+my $IDfile=$config->lookupOrDie("individuals");
+my $genderFile=$config->lookup("gender");
+my $vcfDir=$config->lookupOrDie("vcf");
+my $ploidy=0+$config->lookupOrDie("ploidy");
 if($ploidy<1) { die "invalid ploidy" }
 my %chromLen;
 loadChromLengths($CHROM_LENGTHS);
@@ -93,7 +93,7 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   my $begin=$gene->getBegin()-$MARGIN_AROUND_GENE;
   my $end=$gene->getEnd()+$MARGIN_AROUND_GENE;
   if($begin<0) { $begin=0 }
-  die unless defined($chromLen{$chr});
+  next unless defined($chromLen{$chr});
   if($end>$chromLen{$chr}) { $end=$chromLen{$chr} }
   my $strand=$gene->getStrand();
   my $name=$gene->getId();
@@ -108,7 +108,7 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   system("rm $altGeneFasta");
   my $dashY=$genderFile eq "" ? "" : "-y $genderFile";
   my $errFile="$outDir/err.out";
-  System("$FBI/tvf-to-fasta $dashY -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $outDir/err.out");
+  System("$FBI/tvf-to-fasta $dashY -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $errFile");
   my $err=`cat $errFile`;
   if($err=~/error/) { die }
   my (%warnings,%errors);
@@ -248,7 +248,7 @@ sub loadIDs
 sub loadErrors
 {
   my ($filename,$warnings,$errors)=@_;
-  open(IN,$errors) || die;
+  open(IN,$filename) || die "can't open file: $filename";
   while(<IN>) {
     chomp;
     my @fields=split;

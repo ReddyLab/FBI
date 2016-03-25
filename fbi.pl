@@ -10,6 +10,7 @@ my $name=ProgramName::get();
 die "$name <model-dir> <ref.multi-fasta> <alt.multi-fasta> <ref.multi-gff> <out.fbi>\n" unless @ARGV==5;
 my ($modelDir,$refFasta,$altFasta,$refGFF,$outFBI)=@ARGV;
 
+my $QUIET=""; #"-q";
 my $DEBUG=0;
 my $MAX_TRANSCRIPTS=-1;
 my $MAX_VCF_ERRORS=0;
@@ -79,7 +80,7 @@ while(1) {
       $revFlag="-c";
     }
     my $errorsFlag=$MAX_VCF_ERRORS>=0 ? "-e $MAX_VCF_ERRORS" : "";
-    my $command="$FBI/fbi -q $errorsFlag $revFlag $modelFile $oneGeneGFF $refFastaTemp $altFastaTemp $gffTemp $fbiTemp";
+    my $command="$FBI/fbi $QUIET $errorsFlag $revFlag $modelFile $oneGeneGFF $refFastaTemp $altFastaTemp $gffTemp $fbiTemp";
     print "$command\n" if $DEBUG;;
     my $err=`$command`;
     #print "$err\n"
