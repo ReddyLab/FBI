@@ -24,6 +24,7 @@ my ($configFile,$gffFile,$outDir)=@ARGV;
 # First, some initialization
 #==============================================================
 
+my $DEBUG=0;
 my $VERBOSE=1;
 my $MARGIN_AROUND_GENE=1000;
 my $config=new ConfigFile($configFile);
@@ -137,18 +138,20 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
     undef $indivID; undef $alleleNum ; undef $geneID ; undef $coord;
   }
   $fastaReader->close();
+  last if $DEBUG;
 }
 
 #==============================================================
 # Clean up
 #==============================================================
 
-unlink($refGeneFasta);
-unlink($altGeneFasta);
-unlink($tempBedFile);
-unlink($geneVcfFile);
-unlink($geneTvfFile);
-
+if(!$DEBUG) {
+  unlink($refGeneFasta);
+  unlink($altGeneFasta);
+  unlink($tempBedFile);
+  unlink($geneVcfFile);
+  unlink($geneTvfFile);
+}
 
 #==============================================================
 sub getIndividualList {
