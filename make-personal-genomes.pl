@@ -56,6 +56,7 @@ my $fastaWriter=new FastaWriter;
 # Load gene coordinates from GFF file
 #==============================================================
 
+print "loading GFF\n";
 my $gffReader=new GffTranscriptReader();
 my $genes=$gffReader->loadGenes($gffFile);
 
@@ -63,6 +64,7 @@ my $genes=$gffReader->loadGenes($gffFile);
 # Make FASTA files for each individual
 #==============================================================
 
+print "making FASTA\n";
 my %keepIDs;
 loadIDs($IDfile,\%keepIDs);
 $keepIDs{"reference"}=1;
