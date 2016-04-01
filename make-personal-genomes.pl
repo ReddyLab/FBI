@@ -24,6 +24,7 @@ my ($configFile,$gffFile,$outDir)=@ARGV;
 # First, some initialization
 #==============================================================
 
+
 my $DEBUG=0;
 my $VERBOSE=1;
 my $MARGIN_AROUND_GENE=1000;
