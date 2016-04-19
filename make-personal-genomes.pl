@@ -56,7 +56,6 @@ my $fastaWriter=new FastaWriter;
 # Load gene coordinates from GFF file
 #==============================================================
 
-print "loading GFF\n";
 my $gffReader=new GffTranscriptReader();
 my $genes=$gffReader->loadGenes($gffFile);
 
@@ -64,7 +63,6 @@ my $genes=$gffReader->loadGenes($gffFile);
 # Make FASTA files for each individual
 #==============================================================
 
-print "making FASTA\n";
 my %keepIDs;
 loadIDs($IDfile,\%keepIDs);
 $keepIDs{"reference"}=1;
@@ -107,7 +105,8 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   my $chrVcfFile=$chrToVCF{$chr};
   writeBed3($chr,$begin,$end,$tempBedFile);
   System("$TABIX -h $chrVcfFile -R $tempBedFile > $geneVcfFile");
-  System("$FBI/vcf-to-tvf -i $IDfile -c -v $geneVcfFile $geneTvfFile");
+  #System("$FBI/vcf-to-tvf -i $IDfile -c -v $geneVcfFile $geneTvfFile");
+  System("$FBI/vcf-to-tvf -i $IDfile -v $geneVcfFile $geneTvfFile");
   writeBed6($chr,$begin,$end,$name,$strand,$tempBedFile);
   system("rm $altGeneFasta");
   my $dashY=$genderFile eq "" ? "" : "-y $genderFile";
@@ -190,7 +189,7 @@ sub writeBed4 {
 # writeBed3($chr,$begin,$end,$tempBedFile);
 sub writeBed3 {
   my ($chr,$begin,$end,$outfile)=@_;
-  if($chr=~/chr(.+)/) { $chr=$1 }
+  #if($chr=~/chr(.+)/) { $chr=$1 }
   open(OUT,">$outfile") || die "Can't write file $outfile\n";
   print OUT "$chr\t$begin\t$end\n";
   close(OUT);
