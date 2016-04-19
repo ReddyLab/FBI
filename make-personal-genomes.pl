@@ -224,7 +224,7 @@ sub loadChromLengths
 {
   my ($infile)=@_;
   open(IN,$infile) || die $infile;
-  <IN>;
+  #<IN>; no header!
   while(<IN>) {
     chomp;
     my @fields=split;

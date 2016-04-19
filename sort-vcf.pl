@@ -28,7 +28,7 @@ my $sortedFile="$tempDir/$nopath.sorted";
 system("sort -k1,1d -k2,2n -T $tempDir $bodyFile > $sortedFile");
 
 # Add in the header lines
-system("cat $headerFile $sortedFile > $outfile");
+system("cat $headerFile $sortedFile | bgzip > $outfile");
 
 # Clean up
 unlink($headerFile); unlink($bodyFile); unlink($sortedFile);
