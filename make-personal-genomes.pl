@@ -49,6 +49,7 @@ my $altGeneFasta="$outDir/altgene.fasta";
 my $tempBedFile="$outDir/temp.bed";
 my $geneVcfFile="$outDir/gene.vcf";#"$outDir/gene.vcf.gz";
 my $geneTvfFile="$outDir/gene.tvf";#"$outDir/gene.tvf.gz";
+my $outGFF="$outDir/local.gff";
 my $FBI=$ENV{"FBI"};
 my $fastaWriter=new FastaWriter;
 
@@ -89,11 +90,13 @@ for(my $j=1 ; $j<=$ploidy ; ++$j) {
 #==============================================================
 
 my $numGenes=@$genes;
+open(GFF,">$outGFF") || die "Can't create file $outGFF";
 for(my $i=0 ; $i<$numGenes ; ++$i) {
   my $gene=$genes->[$i];
   my $chr=$gene->getSubstrate();
   my $begin=$gene->getBegin()-$MARGIN_AROUND_GENE;
   my $end=$gene->getEnd()+$MARGIN_AROUND_GENE;
+  writeLocalGFF($gene,$begin,*GFF);
   if($begin<0) { $begin=0 }
   next unless defined($chromLen{$chr});
   if($end>$chromLen{$chr}) { $end=$chromLen{$chr} }
@@ -142,6 +145,7 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   $fastaReader->close();
   last if $DEBUG;
 }
+close(GFF);
 
 #==============================================================
 # Clean up
@@ -266,6 +270,17 @@ sub loadErrors
   close(IN);
 }
 #==============================================================
+sub writeLocalGFF
+{
+  my ($gene,$begin,$fh)=@_;
+  my $numTranscripts=$gene->getNumTranscripts();
+  for(my $i=0 ; $i<$numTranscripts ; ++$i) {
+    my $transcript=$gene->getIthTranscript($i);
+    $transcript->shiftCoords(-$begin);
+    my $gff=$transcript->toGff();
+    print $fh $gff;
+  }
+}
 #==============================================================
 #==============================================================
 

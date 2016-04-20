@@ -213,20 +213,16 @@ void Application::parseChromLine(const Vector<String> &fields)
 
 void Application::parseVariantAndGenotypes(const Vector<String> &fields)
 {
-  //TRACE
   if(!parseVariant(fields)) return;
-  //TRACE
   const int numIndiv=fields.size()-9;
   for(int i=0 ; i<numIndiv ; ++i) {
     const String &genotype=fields[i+9];
     if(genotype.findFirst('.')>=0 ||
        genotype.findFirst('/')>=0) return;
   }
-  //TRACE
   for(int i=0 ; i<numIndiv ; ++i) {
     const String &genotype=fields[i+9];
     Individual &indiv=individuals[i];
-    //cout<<"keeping "<<fields[0]<<"\t"<<fields[1]<<"\t"<<fields[2]<<"\t"<<fields[3]<<endl;
     indiv.genotypes.push_back(genotype);
   }
 }
@@ -338,17 +334,13 @@ bool Application::parseVariant(const Vector<String> &fields,
   for(Vector<String>::iterator cur=alts.begin(), end=alts.end() ; cur!=end ;
       ++cur) {
     String &alt=*cur;
-    //TRACE
-    //  cout<<"alt=\""<<alt<<"\""<<endl;
     if(CNregex.match(alt)) { // CNV (copy-number variant): <CN12>
       const int n=CNregex[1];
       alt="";
       for(int i=0 ; i<n ; ++i) alt+=ref;
     }
     else if(!dnaRegex.match(alt)) return false;
-    //TRACE
   }
-  //TRACE
   return true;
 }
 
