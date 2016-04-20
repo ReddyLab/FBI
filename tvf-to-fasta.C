@@ -766,7 +766,7 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
       // Report stats
 
       //###
-      if(variantsApplied<5 || indelVariantsApplied==0) continue;
+      //if(variantsApplied<5 || indelVariantsApplied==0) continue;
       // ###
 
       if(variantsApplied>0 || indelVariantsApplied>0 || mismatches>0)
