@@ -106,7 +106,7 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   writeBed3($chr,$begin,$end,$tempBedFile);
   System("$TABIX -h $chrVcfFile -R $tempBedFile > $geneVcfFile");
   #System("$FBI/vcf-to-tvf -i $IDfile -c -v $geneVcfFile $geneTvfFile");
-  System("$FBI/vcf-to-tvf -i $IDfile -v $geneVcfFile $geneTvfFile");
+  System("$FBI/vcf-to-tvf -i $IDfile $geneVcfFile $geneTvfFile");
   writeBed6($chr,$begin,$end,$name,$strand,$tempBedFile);
   system("rm -f $altGeneFasta");
   my $dashY=$genderFile eq "" ? "" : "-y $genderFile";

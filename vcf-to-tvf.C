@@ -213,20 +213,20 @@ void Application::parseChromLine(const Vector<String> &fields)
 
 void Application::parseVariantAndGenotypes(const Vector<String> &fields)
 {
-TRACE
+  //TRACE
   if(!parseVariant(fields)) return;
-TRACE
+  //TRACE
   const int numIndiv=fields.size()-9;
   for(int i=0 ; i<numIndiv ; ++i) {
     const String &genotype=fields[i+9];
     if(genotype.findFirst('.')>=0 ||
        genotype.findFirst('/')>=0) return;
   }
-TRACE
+  //TRACE
   for(int i=0 ; i<numIndiv ; ++i) {
     const String &genotype=fields[i+9];
     Individual &indiv=individuals[i];
-    cout<<"keeping "<<fields[0]<<"\t"<<fields[1]<<"\t"<<fields[2]<<"\t"<<fields[3]<<endl;
+    //cout<<"keeping "<<fields[0]<<"\t"<<fields[1]<<"\t"<<fields[2]<<"\t"<<fields[3]<<endl;
     indiv.genotypes.push_back(genotype);
   }
 }
