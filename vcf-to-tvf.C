@@ -223,6 +223,7 @@ void Application::parseVariantAndGenotypes(const Vector<String> &fields)
   for(int i=0 ; i<numIndiv ; ++i) {
     const String &genotype=fields[i+9];
     Individual &indiv=individuals[i];
+    cout<<"keeping "<<fields[0]<<"\t"<<fields[1]<<"\t"<<fields[2]<<"\t"<<fields[3]<<endl;
     indiv.genotypes.push_back(genotype);
   }
 }
