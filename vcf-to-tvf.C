@@ -339,7 +339,7 @@ bool Application::parseVariant(const Vector<String> &fields,
       ++cur) {
     String &alt=*cur;
     //TRACE
-  cout<<"alt=\""<<alt<<"\""<<endl;
+    //  cout<<"alt=\""<<alt<<"\""<<endl;
     if(CNregex.match(alt)) { // CNV (copy-number variant): <CN12>
       const int n=CNregex[1];
       alt="";
