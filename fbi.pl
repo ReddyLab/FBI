@@ -50,9 +50,10 @@ while(1) {
   my ($refDef,$refSeqRef);
   while(1) {
     ($refDef,$refSeqRef)=$refReader->nextSequenceRef();
-    die "$altID not found in $refFasta\n" unless $refDef;
+    die "no more sequences in $refFasta\n" unless $refDef;
     $refDef=~/^\s*>\s*(\S+)/ || die "Can't parse ID from ref defline: $refDef";
     my $refID=$1;
+    if($refID=~/(\S+)_\d+$/) { $refID=$1 }
     last if $refID eq $altID;
   }
   $fastaWriter->writeFastaFromRef($refDef,$refSeqRef,$refFastaTemp);
