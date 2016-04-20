@@ -113,7 +113,7 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   my $errFile="$outDir/err.out";
   System("$FBI/tvf-to-fasta $dashY -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $errFile");
   my $err=`cat $errFile`;
-  if($err=~/error/) { die }
+  if($err=~/error/ || $err=~/Abort/) { die $err }
   my (%warnings,%errors);
   loadErrors($errFile,\%warnings,\%errors);
   system("cat $errFile >> $outDir/errors.txt");

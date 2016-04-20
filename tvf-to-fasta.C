@@ -292,7 +292,7 @@ void Application::convert(File &tvf,ostream &os,const String genomeFile)
     if(fields.size()!=numVariants+1) {
       cout<<fields.size()<<"\t"<<numVariants<<"\t"<<endl;
       if(fields.size()>0) cout<<fields[0]<<endl;
-      throw "Wrong number of fields in TVF line";
+      throw "Abort: Wrong number of fields in TVF line";
     }
     String id=fields.front();
     if(!wantIndiv.isEmpty() && id!=wantIndiv) continue;
@@ -307,28 +307,28 @@ void Application::convert(File &tvf,ostream &os,const String genomeFile)
 	else {
 	  gt.alleles[0]=field[0]-'0';
 	  if(gt.alleles[0]<0 || gt.alleles[0]>9) 
-	    throw fields[0]+" : unknown allele indicator";
+	    throw String("Abort: ")+fields[0]+" : unknown allele indicator";
 	}
 	loci.push_back(gt);
       }
       else if(field.getLength()==3) {
-	if(field[1]!='|') throw "VCF file is not phased";
+	if(field[1]!='|') throw "Abort: VCF file is not phased";
 	Genotype gt(2);
 	if(field[0]=='.') gt.alleles[0]=0;
 	else { 
 	  gt.alleles[0]=field[0]-'0'; 
 	  if(gt.alleles[0]<0 || gt.alleles[0]>9) 
-	    throw fields[0]+" : unknown allele indicator";
+	    throw String("Abort: ")+fields[0]+" : unknown allele indicator";
 	}
 	if(field[2]=='.') gt.alleles[1]=0;
 	else {
 	  gt.alleles[1]=field[2]-'0';
 	  if(gt.alleles[1]<0 || gt.alleles[1]>9) 
-	    throw fields[2]+" : unknown allele indicator";
+	    throw String("Abort: ")+fields[2]+" : unknown allele indicator";
 	}
 	loci.push_back(gt);
       }
-      else throw String("Cannot parse genotype: ")+field;
+      else throw String("Abort: Cannot parse genotype: ")+field;
     }
     delete &fields;
     emit(id,loci,os);
@@ -347,7 +347,7 @@ void Application::parseHeader(const String &line)
 	; cur!=end ; ++cur, ++i) {
     const String &field=*cur;
     Vector<String> fields; field.getFields(fields,":");
-    if(fields.size()<5) throw String("cannot parse TVF header: ")+field;
+    if(fields.size()<5) throw String("Abort: cannot parse TVF header: ")+field;
     const String &id=fields[0];
     const String &chr=fields[1];
     //if(!wantChr.isEmpty() && chr!=wantChr) continue;
@@ -355,7 +355,7 @@ void Application::parseHeader(const String &line)
     if(!prevPos.isDefined(chr)) prevPos[chr]=0;
     //if(pos==prevPos[chr]) continue;
     if(pos<prevPos[chr]) 
-      throw String(pos)+"<="+prevPos[chr]+
+      throw String("Abort: ")+String(pos)+"<="+prevPos[chr]+
 	": input file is not sorted: use vcf-sort and re-convert to tvf";
     prevPos[chr]=pos;
     Variant variant(id,chr,pos,i);
@@ -406,7 +406,7 @@ void Application::loadRegions(const String &regionsFilename,const String &
     line.trimWhitespace();
     if(line.isEmpty()) continue;
     Vector<String> fields; line.getFields(fields);
-    if(fields.size()<6) throw "regions file requires 6 fields: chr begin end name score strand";
+    if(fields.size()<6) throw "Abort: regions file requires 6 fields: chr begin end name score strand";
     const String chr=fields[0];
     if(!wantChr.isEmpty() && chr!=wantChr) continue;
     const int begin=fields[1].asInt(), end=fields[2].asInt();
@@ -421,7 +421,7 @@ void Application::loadRegions(const String &regionsFilename,const String &
       system(cmd.c_str());
       String def;
       FastaReader::load(tempFile,def,seq);
-      //if(seq.contains(",")) throw tempFile+"contains a comma: "+cmd;
+      //if(seq.contains(",")) throw String("Abort: ")+tempFile+"contains a comma: "+cmd;
     }
 
     Region *r=new Region(id,chr,strand,begin,end,seq);
@@ -452,7 +452,8 @@ void Application::loadMales(const String &filename)
     Vector<String> fields;
     line.getFields(fields);
     if(fields.size()==0) continue;
-    if(fields.size()!=2) throw line+" : invalid gender specification";
+    if(fields.size()!=2) 
+      throw String("Abort: ")+line+" : invalid gender specification";
     if(fields[1]=="male") males.insert(fields[0]);
   }
 }
@@ -554,9 +555,13 @@ const Variant *Application::disambiguateOverlaps(int &v,const int numVariants,
 	{ refLen=altGenomeLen-altPos; ref=ref.substring(0,refLen); }
       String genomic=altGenome.substring(altPos,refLen);
       if(ref!=genomic) 
-	throw String("VCF_ERROR\tSEQUENCE_MISMATCH\t")+indiv+"\t"+regionID
-	  +"\t"+variant.id+":"+variant.chr+":"+variant.pos
-	  +"\t"+ref+"!="+genomic;
+	/*throw String("Abort: VCF_ERROR\tSEQUENCE_MISMATCH\t")+indiv
+	  +"\t"+regionID+"\t"+variant.id+":"+variant.chr+":"+variant.pos
+	  +"\t"+ref+"!="+genomic;*/
+	cerr<<"VCF_ERROR\tSEQUENCE_MISMATCH\t"<<indiv<<"\t"<<regionID
+	    <<"\t"<<variant.id<<":"<<variant.chr<<":"<<variant.pos
+	    <<"\t"<<ref<<"!="<<genomic;
+      return NULL;
     }
 
     // Verify that all others are strictly contained within the longest
@@ -666,26 +671,6 @@ bool Application::skipGender(const Region &region,bool male,int ploid)
   return ploid>=ploidy;
 }
 
-
-/*
-	if(SANITY_CHECKS) {
-	const String refCheck=region.seq.substring(localPos,refLen);
-	const int refCheckLen=refCheck.getLength();
-	const String refAlleleSub=refAllele.substring(0,refCheckLen);
-	  if(localPos-deltas[ploid]<0) {
-	    cout<<"localPos="<<localPos<<" deltas="<<deltas<<endl;
-	    INTERNAL_ERROR; }
-	  if(localPos-deltas[ploid]+refLen>seq[ploid].getLength())
-	    throw String("Internal error: localPos=")+localPos+" deltas[j]="+
-	      deltas[ploid]+" refLen="+refLen+" seq[j].length="+
-	      seq[ploid].length();
-	  if(seq[ploid].substring(localPos-deltas[ploid],refCheckLen)!=
-	     refAlleleSub)
-	    throw String("Inconsistent overlapping substitutions found: ")+
-	      individualID+" "+variant.id;
-	}
-
- */
 
 
 void Application::updateCigar(int refLen,int altLen,int localPos,
