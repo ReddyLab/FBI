@@ -177,7 +177,8 @@ protected:
 				      const Vector<Genotype> &loci,
 				      int delta,const String &altGenome,
 				      int regionBegin,const String &indiv,
-				      const String &regionID);
+				      const String &regionID,
+				      bool &refMismatch);
   void transitiveClosure(const Vector<Variant> &variants,int &v,
 			 const int numVariants,int ploid,
 			 const Vector<Genotype> &loci,
@@ -505,8 +506,10 @@ const Variant *Application::disambiguateOverlaps(int &v,const int numVariants,
 					 const Vector<Genotype> &loci,
 					 int delta,const String &altGenome,
 					 int regionBegin,const String &indiv,
-					 const String &regionID)
+					 const String &regionID,
+					 bool &refMismatch)
 {
+  refMismatch=false;
   const int altGenomeLen=altGenome.length();
 
   // First, take the transitive closure of overlapping variants
@@ -554,14 +557,16 @@ const Variant *Application::disambiguateOverlaps(int &v,const int numVariants,
       if(altPos+refLen>altGenomeLen)
 	{ refLen=altGenomeLen-altPos; ref=ref.substring(0,refLen); }
       String genomic=altGenome.substring(altPos,refLen);
-      if(ref!=genomic) 
+      if(ref!=genomic) {
 	/*throw String("Abort: VCF_ERROR\tSEQUENCE_MISMATCH\t")+indiv
 	  +"\t"+regionID+"\t"+variant.id+":"+variant.chr+":"+variant.pos
 	  +"\t"+ref+"!="+genomic;*/
 	cerr<<"VCF_ERROR\tSEQUENCE_MISMATCH\t"<<indiv<<"\t"<<regionID
 	    <<"\t"<<variant.id<<":"<<variant.chr<<":"<<variant.pos
-	    <<"\t"<<ref<<"!="<<genomic;
-      return NULL;
+	    <<"\t"<<ref<<"!="<<genomic<<endl;
+	refMismatch=true;
+	return NULL;
+      }
     }
 
     // Verify that all others are strictly contained within the longest
@@ -712,10 +717,14 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
 
       // Iterate over variants
       const int numVariants=region.variants.size();
+      int variantsApplied=0, indelVariantsApplied=0, mismatches=0;
       for(int v=0 ; v<numVariants ; ) {
+	bool refMismatch;
 	const Variant *variant=
 	  disambiguateOverlaps(v,numVariants,ploid,region.variants,loci,deltas,
-			       seq,region.begin,individualID,region_hap);
+			       seq,region.begin,individualID,region_hap,
+			       refMismatch);
+	if(refMismatch) { ++variantsApplied; ++mismatches; }
 	if(!variant) continue;
 
 	// Prepare to do the substitution
@@ -730,10 +739,12 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
 
 	// Do the substitution in the alt genome
 	seq.replaceSubstring(localPos-deltas,refLen,altAllele);
+	++variantsApplied;
 
 	// Update the delta (difference in coordinates btwn ref/alt)
 	const int delta=refLen-altLen;
 	deltas+=delta;
+	if(delta>0) ++indelVariantsApplied;
 
 	// Update CIGAR string
 	if(delta!=0)
@@ -751,6 +762,18 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
 	region.strand+" /cigar="+cigar;
       writer.addToFasta(def,seq,os);
       if(!wantIndiv.isEmpty()) region.clearSeq(); // save memory
+
+      // Report stats
+
+      //###
+      if(variantsApplied<5 || indelVariantsApplied==0) continue;
+      // ###
+
+      if(variantsApplied>0 || indelVariantsApplied>0 || mismatches>0)
+	cout<<individualID<<"\thap"<<ploid<<"\t"<<region.id<<"\t"
+	    <<variantsApplied<<" applied\t"
+	    <<indelVariantsApplied<<" indels applied\t"<<mismatches
+	    <<" mismatches"<<endl;
     } // end foreach region
   } // end for ploidy
 }
