@@ -316,37 +316,30 @@ bool Application::parseVariant(const Vector<String> &fields,
 			       String &chr,int &pos,String &ref,
 			       Vector<String> &alts,String &id)
 {
-TRACE
   if(variableOnly && !variableSite(fields)) return false;
-TRACE
   if(fields[6]!="PASS" && fields[6]!=".") return false;
-TRACE
   if(fields.size()<10) return false;
   if(fields[8]!="GT") {
     cerr<<"WARNING: GT expected in field 9 of VCF file"<<endl;
     return false;
   }
-TRACE
   if(fields[3].contains("<") || fields[4].contains("<")) return false;
-TRACE
   chr=fields[0];
   if(prependChr) chr=String("chr")+chr;
   pos=fields[1].asInt()-1; // VCF files are 1-based
   if(wantFilter && !keep(chr,pos)) return false;
-TRACE
   id=fields[2];
   if(id==".") id=chr+"@"+pos;
   ref=fields[3];
   const String &alt=fields[4];
-TRACE
   if(!dnaRegex.match(ref)) return false;
-TRACE
   if(SNPsOnly && (ref.size()!=1 || alt.size()!=1)) return false;
   alt.getFields(alts,","); // in case it's a multi-allelic locus
   for(Vector<String>::iterator cur=alts.begin(), end=alts.end() ; cur!=end ;
       ++cur) {
     String &alt=*cur;
 TRACE
+  cout<<"alt=\""<<alt<<"\""<<endl;
     if(CNregex.match(alt)) { // CNV (copy-number variant): <CN12>
       const int n=CNregex[1];
       alt="";
