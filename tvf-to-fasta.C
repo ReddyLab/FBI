@@ -724,7 +724,7 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
 	  disambiguateOverlaps(v,numVariants,ploid,region.variants,loci,deltas,
 			       seq,region.begin,individualID,region_hap,
 			       refMismatch);
-	if(refMismatch) { ++variantsApplied; ++mismatches; }
+	if(refMismatch) ++mismatches;
 	if(!variant) continue;
 
 	// Prepare to do the substitution
