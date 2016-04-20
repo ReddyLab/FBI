@@ -217,6 +217,11 @@ void Application::parseVariantAndGenotypes(const Vector<String> &fields)
   const int numIndiv=fields.size()-9;
   for(int i=0 ; i<numIndiv ; ++i) {
     const String &genotype=fields[i+9];
+    if(genotype.findFirst('.')>=0 ||
+       genotype.findFirst('/')>=0) return;
+  }
+  for(int i=0 ; i<numIndiv ; ++i) {
+    const String &genotype=fields[i+9];
     Individual &indiv=individuals[i];
     indiv.genotypes.push_back(genotype);
   }
@@ -346,112 +351,6 @@ bool Application::parseVariant(const Vector<String> &fields)
   return true;
 }
 
-
-/*
-void Application::parseVariantSM(const Vector<String> &fields,File &temp,
-				 int &variantNum,int entrySize)
-{
-  // Parse the line
-  String chr, ref, alt, id;
-  int pos;
-  if(!parseVariant(fields,chr,pos,ref,alt,id)) return;
-
-  const int numVariants=variants.size();
-  if(variantNum>=numVariants) {
-    cerr<<variantNum<<" >= "<<numVariants<<endl;
-    INTERNAL_ERROR;
-  }
-
-  // Parse genotypes & store in binary temp file
-  const int rowSize=numVariants*entrySize;
-  char *buffer=new char[entrySize];
-  const int numIndiv=individuals.size();
-  for(int i=0 ; i<numIndiv ; ++i) {
-    const String &genotype=fields[i+9];
-    for(int j=0 ; j<entrySize ; ++j) buffer[j]=' ';
-    if(genotype.length()>entrySize) {
-      cerr<<"Genotype length "<<genotype.length()<<" > "<<entrySize<<endl;
-      INTERNAL_ERROR;
-    }
-    for(int j=0 ; j<genotype.length() ; ++j) buffer[j]=genotype[j];
-    temp.seek(i*rowSize+variantNum*entrySize);
-    temp.write(entrySize,reinterpret_cast<void*>(buffer));
-  }
-  delete [] buffer;
-  ++variantNum;
-}
-
-
-
-void Application::convertSM(File &infile,File &outfile,const String &tempfile)
-{
-  cerr<<timer.elapsedTime()<<endl;
-  cerr<<"writing binary file..."<<endl;
-
-  // First, allocate binary file to store genotypes
-  File temp(tempfile,"w");
-  const int numIndiv=individuals.size(), numVariants=variants.size();
-  const int entrySize=3;
-  const int rowSize=numVariants*entrySize;
-  const int totalSize=numIndiv*rowSize;
-  const int lastEntry=totalSize-entrySize;
-  temp.seek(lastEntry);
-  char *buffer=new char[entrySize];
-  temp.write(entrySize,reinterpret_cast<void*>(buffer));
-  delete [] buffer;
-
-  // Reprocess the input file, store genotypes in the binary file
-  int variantNum=0;
-  while(!infile.eof()) {
-    String line=infile.getline();
-    line.trimWhitespace();
-    Vector<String> &fields=*line.getFields();
-    if(fields.size()>0 && fields[0][0]!='#') 
-      parseVariantSM(fields,temp,variantNum,entrySize);
-    delete &fields;
-  }
-  
-  // Convert the binary temp file into output TVF file
-  temp.close();
-  cerr<<timer.elapsedTime()<<endl;
-  cerr<<"converting binary file to text..."<<endl;
-  File tempRead(tempfile,"r");
-  outputSM(tempRead,outfile,entrySize);
-}
-
-
-
-void Application::outputSM(File &temp,File &out,int entrySize)
-{
-  // Output list of variants
-  const int numVariants=variants.size();
-  for(int i=0 ; i<numVariants ; ++i) {
-    const Variant &v=variants[i];
-    out.print(v.asString());
-    out.print(i+1<numVariants ? "\t" : "\n");
-  }
-  if(numVariants==0) out.print("\n");
-
-  // Output individual genotypes
-  const int numIndiv=individuals.size();
-  temp.seek(0);
-  char *buffer=new char[entrySize+1];
-  buffer[entrySize]='\0';
-  for(int i=0 ; i<numIndiv ; ++i) {
-    const Individual &indiv=individuals[i];
-    if(numVariants==0) { out.print(indiv.id+"\n"); continue; }
-    out.print(indiv.id+"\t");
-    for(int i=0 ; i<numVariants ; ++i) {
-      temp.read(entrySize,reinterpret_cast<void*>(buffer));
-      String genotype(buffer);
-      genotype.trimWhitespace();
-      out.print(genotype);
-      out.print(i+1<numVariants ? "\t" : "\n");
-    }
-  }
-  delete buffer;
-}
-*/
 
 
 void Application::loadIndivList(const String &filename)

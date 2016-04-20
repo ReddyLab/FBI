@@ -108,7 +108,7 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   #System("$FBI/vcf-to-tvf -i $IDfile -c -v $geneVcfFile $geneTvfFile");
   System("$FBI/vcf-to-tvf -i $IDfile -v $geneVcfFile $geneTvfFile");
   writeBed6($chr,$begin,$end,$name,$strand,$tempBedFile);
-  system("rm $altGeneFasta");
+  system("rm -f $altGeneFasta");
   my $dashY=$genderFile eq "" ? "" : "-y $genderFile";
   my $errFile="$outDir/err.out";
   System("$FBI/tvf-to-fasta $dashY -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $errFile");
