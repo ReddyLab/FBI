@@ -319,7 +319,8 @@ bool Application::parseVariant(const Vector<String> &fields,
 TRACE
   if(variableOnly && !variableSite(fields)) return false;
 TRACE
-  if(fields.size()<10 || fields[6]!="PASS" || fields[8]!="GT") return false;
+  if(fields[6]!="PASS" && fields[6]!=".") return false;
+  if(fields.size()<10 || fields[8]!="GT") return false;
 TRACE
   if(fields[3].contains("<") || fields[4].contains("<")) return false;
 TRACE
