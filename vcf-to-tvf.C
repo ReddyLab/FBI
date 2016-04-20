@@ -338,7 +338,7 @@ bool Application::parseVariant(const Vector<String> &fields,
   for(Vector<String>::iterator cur=alts.begin(), end=alts.end() ; cur!=end ;
       ++cur) {
     String &alt=*cur;
-TRACE
+    //TRACE
   cout<<"alt=\""<<alt<<"\""<<endl;
     if(CNregex.match(alt)) { // CNV (copy-number variant): <CN12>
       const int n=CNregex[1];
@@ -346,9 +346,9 @@ TRACE
       for(int i=0 ; i<n ; ++i) alt+=ref;
     }
     else if(!dnaRegex.match(alt)) return false;
-TRACE
+    //TRACE
   }
-TRACE
+  //TRACE
   return true;
 }
 
