@@ -7,7 +7,7 @@ use GffTranscriptReader;
 use TempFilename;
 
 my $name=ProgramName::get();
-die "$name <model-dir> <ref.multi-fasta> <alt.multi-fasta> <ref.multi-gff> <out.fbi>\n" unless @ARGV==5;
+die "$name <model-file-or-dir> <ref.multi-fasta> <alt.multi-fasta> <ref.multi-gff> <out.fbi>\n" unless @ARGV==5;
 my ($modelDir,$refFasta,$altFasta,$refGFF,$outFBI)=@ARGV;
 
 my $QUIET=""; #"-q";
@@ -119,6 +119,7 @@ sub System
 sub getModelFile
 {
   my ($seqRef,$dir)=@_;
+  return $dir unless -d $dir;
   my $ATCG=$$seqRef=~s/([ACGT])/$1/g;
   my $GC=$$seqRef=~s/([CG])/$1/g;
   my $gc=$GC/$ATCG;
