@@ -143,7 +143,6 @@ void EnumerateAltStructures::compute()
     if(!signal.broken) { alternatives[i].push_back(signal); continue; }
     if(i==0 || i==numSignals-1) INTERNAL_ERROR; // TSS/TES can't be broken
     if(allowCrypticSites) {
-TRACE
       TranscriptSignal prev=original[i-1], next=original[i+1];
       const int prevSignalPos=prev.pos;
       const int nextSignalPos=next.pos;
@@ -177,6 +176,7 @@ TRACE
     iter.addUnit(n);
   }
   for(iter.reset() ; iter.hasMore() ; iter.advance()) {
+TRACE
     Array1D<int> combination;
     iter.getCombination(combination);
     TranscriptSignals novel, temp;
