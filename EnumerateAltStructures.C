@@ -176,7 +176,6 @@ void EnumerateAltStructures::compute()
     iter.addUnit(n);
   }
   for(iter.reset() ; iter.hasMore() ; iter.advance()) {
-TRACE
     Array1D<int> combination;
     iter.getCombination(combination);
     TranscriptSignals novel, temp;
@@ -189,6 +188,7 @@ TRACE
     for(int i=0 ; i<numSignals ; ++i)
       novel.addSignal(alternatives[i][combination[i]]);
     bool deadSignals=novel.anyDead();
+    cout<<deadSignals<<" "<<allowIntronRetention<<" "<<allowExonSkipping<<endl;
     if(deadSignals && allowIntronRetention && allowExonSkipping) temp=novel;
     if(!deadSignals) addIfUnique(novel);
     else if(allowExonSkipping && applyExonSkipping(novel))
