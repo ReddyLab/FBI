@@ -657,7 +657,7 @@ const Variant *Application::disambiguateOverlaps(int &v,const int numVariants,
       }
     }
   }
-TRACE
+  cout<<*longestVariant<<endl;
 
   // Return the longest variant
   return longestVariant;
