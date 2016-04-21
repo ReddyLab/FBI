@@ -162,7 +162,7 @@ void EnumerateAltStructures::compute()
       }
     }
     if(allowExonSkipping || allowIntronRetention) {
-      cout<<"adding dead signal"<<endl;
+      cout<<"adding dead signal "<<signal.getPos()<<endl;
       TranscriptSignal dead(signal.getType(),signal.getPos(),0.0);
       dead.makeDead();
       alternatives[i].push_back(dead);
