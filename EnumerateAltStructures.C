@@ -194,7 +194,7 @@ void EnumerateAltStructures::compute()
       if(allowExonSkipping && applyExonSkipping(novel))
 	if(!novel.anyDead()) addIfUnique(novel);
       if(allowIntronRetention && deadSignals && applyIntronRetention(temp))
-	if(!temp.anyDead()) addIfUnique(temp);
+	if(!temp.anyDead()) {cout<<"ok"<<endl;addIfUnique(temp);}
     }
   }
 }
@@ -202,7 +202,6 @@ void EnumerateAltStructures::compute()
 
 void EnumerateAltStructures::addIfUnique(TranscriptSignals signals)
 {
-TRACE
   if(signals.anyCryptic()) signals.getChange().crypticSite=true;
   Essex::CompositeNode *msg;
   GffTranscript *transcript=signals.toTranscript(genome,sensors,msg);
