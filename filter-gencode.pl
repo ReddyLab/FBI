@@ -3,7 +3,7 @@ use strict;
 use GffReader;
 use ProgramName;
 
-my $name=ProgramName::get():
+my $name=ProgramName::get();
 die "$name <gencode.gff> <out.gff>\n" unless @ARGV==2;
 my ($infile,$outfile)=@ARGV;
 
@@ -30,12 +30,12 @@ while(1) {
   my $transID=$extra->{"transcript_id"};
   my $substrate=$feature->getSubstrate();
   my $source=$feature->getSource();
-  my $begin=$feature->getBegin();
+  my $begin=$feature->getBegin()+1; # FIXED ON 4/21/2016
   my $end=$feature->getEnd();
   my $score=$feature->getScore();
   my $strand=$feature->getStrand();
   my $frame=$feature->getFrame();
-  print "$substrate\t$source\t$featureType\t$begin\t$end\t$score\t$strand\t$frame\tgene_id=$geneID;transcript_id=$transID;type=$transcriptType;\n";
+  print OUT "$substrate\t$source\t$featureType\t$begin\t$end\t$score\t$strand\t$frame\tgene_id=$geneID;transcript_id=$transID;type=$transcriptType;\n";
 }
 close(OUT);
 close(IN);
