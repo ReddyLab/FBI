@@ -718,6 +718,7 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
       // Iterate over variants
       const int numVariants=region.variants.size();
       int variantsApplied=0, indelVariantsApplied=0, mismatches=0;
+      cout<<numVariants<<endl;
       for(int v=0 ; v<numVariants ; ) {
 	bool refMismatch;
 	const Variant *variant=
@@ -838,11 +839,11 @@ void Variant::trim()
   for(int i=0 ; i<numAlleles ; ++i) {
     int len=end[i]+1-begin;
     if(len<0) len=0;
-    cout<<"trimming "<<alleles[i];
+    //cout<<"trimming "<<alleles[i];
     alleles[i]=alleles[i].substring(begin,len);
-    cout<<" to "<<alleles[i]<<endl;
+    //cout<<" to "<<alleles[i]<<endl;
   }
-  cout<<"================"<<endl;
+  //cout<<"================"<<endl;
 
   //for(int i=0 ; i<numAlleles ; ++i) cout<<"allele["<<i<<"]="<<alleles[i]<<endl;
 
