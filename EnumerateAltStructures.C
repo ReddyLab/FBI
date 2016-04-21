@@ -190,10 +190,14 @@ void EnumerateAltStructures::compute()
     bool deadSignals=novel.anyDead();
     if(deadSignals && allowIntronRetention) temp=novel;
     if(!deadSignals) addIfUnique(novel);
-    else if(allowExonSkipping && applyExonSkipping(novel))
-      if(!novel.anyDead()) addIfUnique(novel);
-    if(allowIntronRetention && deadSignals && applyIntronRetention(temp))
-      if(!temp.anyDead()) addIfUnique(temp);
+    else {
+      if(allowExonSkipping && applyExonSkipping(novel))
+	if(!novel.anyDead()) addIfUnique(novel);
+      if(allowIntronRetention && deadSignals && applyIntronRetention(temp)) {
+TRACE
+	if(!temp.anyDead()) addIfUnique(temp);
+      }
+    }
   }
 }
 
