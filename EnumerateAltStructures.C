@@ -194,7 +194,7 @@ void EnumerateAltStructures::compute()
       if(allowExonSkipping && applyExonSkipping(novel))
 	if(!novel.anyDead()) addIfUnique(novel);
       if(allowIntronRetention && deadSignals && applyIntronRetention(temp))
-	if(!temp.anyDead()) {cout<<"ok"<<endl;addIfUnique(temp);}
+	if(!temp.anyDead()) addIfUnique(temp);
     }
   }
 }
@@ -203,8 +203,9 @@ void EnumerateAltStructures::compute()
 void EnumerateAltStructures::addIfUnique(TranscriptSignals signals)
 {
   if(signals.anyCryptic()) signals.getChange().crypticSite=true;
-  Essex::CompositeNode *msg;
+  Essex::CompositeNode *msg=NULL;
   GffTranscript *transcript=signals.toTranscript(genome,sensors,msg);
+  cout<<*transcript<<endl;
   for(Vector<AlternativeStructure*>::iterator cur=altStructures.begin(), 
 	end=altStructures.end() ; cur!=end ; ++cur) {
     const AlternativeStructure &other=**cur;
