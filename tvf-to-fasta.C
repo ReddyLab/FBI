@@ -838,7 +838,9 @@ void Variant::trim()
   for(int i=0 ; i<numAlleles ; ++i) {
     int len=end[i]+1-begin;
     if(len<0) len=0;
+    cout<<"trimming "<<alleles[i];
     alleles[i]=alleles[i].substring(begin,len);
+    cout<<" to "<<alleles[i]<<endl;
   }
 
   //for(int i=0 ; i<numAlleles ; ++i) cout<<"allele["<<i<<"]="<<alleles[i]<<endl;
