@@ -188,13 +188,12 @@ void EnumerateAltStructures::compute()
     for(int i=0 ; i<numSignals ; ++i)
       novel.addSignal(alternatives[i][combination[i]]);
     bool deadSignals=novel.anyDead();
-    cout<<deadSignals<<" "<<allowIntronRetention<<" "<<allowExonSkipping<<endl;
-    if(deadSignals && allowIntronRetention && allowExonSkipping) temp=novel;
+    if(deadSignals && allowIntronRetention) temp=novel;
     if(!deadSignals) addIfUnique(novel);
     else if(allowExonSkipping && applyExonSkipping(novel))
       if(!novel.anyDead()) addIfUnique(novel);
     if(allowIntronRetention && deadSignals && applyIntronRetention(temp))
-      if(!novel.anyDead()) addIfUnique(temp);
+      if(!temp.anyDead()) addIfUnique(temp);
   }
 }
 
