@@ -312,7 +312,7 @@ void Application::convert(File &tvf,ostream &os,const String genomeFile)
 	}
 	loci.push_back(gt);
       }
-      else if(field.getLength()==3) {
+      else if(field.getLength()==3) { // ### ASSUMES DIPLOID
 	if(field[1]!='|') throw "Abort: VCF file is not phased";
 	Genotype gt(2);
 	if(field[0]=='.') gt.alleles[0]=0;
@@ -738,6 +738,7 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
 	  refLen=region.seq.getLength()-localPos;
 
 	// Do the substitution in the alt genome
+	cout<<"substituting "<<refAllele<<"->"<<altAllele<<" at "<<localPos-deltas<<endl;
 	seq.replaceSubstring(localPos-deltas,refLen,altAllele);
 	++variantsApplied;
 

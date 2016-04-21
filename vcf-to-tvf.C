@@ -215,11 +215,11 @@ void Application::parseVariantAndGenotypes(const Vector<String> &fields)
 {
   if(!parseVariant(fields)) return;
   const int numIndiv=fields.size()-9;
-  for(int i=0 ; i<numIndiv ; ++i) {
+  /*for(int i=0 ; i<numIndiv ; ++i) {
     const String &genotype=fields[i+9];
     if(genotype.findFirst('.')>=0 ||
        genotype.findFirst('/')>=0) return;
-  }
+       }*/
   for(int i=0 ; i<numIndiv ; ++i) {
     const String &genotype=fields[i+9];
     Individual &indiv=individuals[i];
