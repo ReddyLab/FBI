@@ -205,7 +205,7 @@ void EnumerateAltStructures::addIfUnique(TranscriptSignals signals)
   if(signals.anyCryptic()) signals.getChange().crypticSite=true;
   Essex::CompositeNode *msg=NULL;
   GffTranscript *transcript=signals.toTranscript(genome,sensors,msg);
-  cout<<*transcript<<endl;
+  transcript->toGff(cout);cout<<endl;
   for(Vector<AlternativeStructure*>::iterator cur=altStructures.begin(), 
 	end=altStructures.end() ; cur!=end ; ++cur) {
     const AlternativeStructure &other=**cur;
