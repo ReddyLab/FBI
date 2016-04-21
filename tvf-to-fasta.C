@@ -535,6 +535,7 @@ const Variant *Application::disambiguateOverlaps(int &v,const int numVariants,
   // by alt length (i.e., the longest insertion)
   if(longestLength<=1) {
     longestVariant=NULL;
+    longestLength=-1;
     for(Vector<const Variant*>::iterator cur=closure.begin(), 
 	  end=closure.end() ; cur!=end ; ++cur) {
       const Variant &variant=**cur;
@@ -657,7 +658,6 @@ const Variant *Application::disambiguateOverlaps(int &v,const int numVariants,
       }
     }
   }
-  cout<<longestVariant<<endl;
 
   // Return the longest variant
   return longestVariant;
