@@ -516,7 +516,6 @@ const Variant *Application::disambiguateOverlaps(int &v,const int numVariants,
   Vector<const Variant*> closure;
   transitiveClosure(variants,v,numVariants,ploid,loci,closure);
   if(closure.isEmpty()) return NULL;
-TRACE
 
   // Find the longest variant (by ref length) in the closure (i.e., the
   // longest deletion)
@@ -658,6 +657,7 @@ TRACE
       }
     }
   }
+TRACE
 
   // Return the longest variant
   return longestVariant;
