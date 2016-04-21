@@ -177,6 +177,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   append(root,"vcf-errors",VCFerrors);
   append(root,"alignment",CIGAR);
   append(root,"defline",altDefline);
+  refTrans->computePhases();
   Essex::CompositeNode *refTransEssex=refTrans->toEssex();
   refTransEssex->getTag()="reference-transcript";
   root->append(refTransEssex);
@@ -228,6 +229,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   if(referenceIsOK) {
     GffTranscript *altTrans=loadGff(outGff);
     altTrans->loadSequence(altSeqStr);
+    altTrans->computePhases();
     Essex::CompositeNode *altTransEssex=altTrans->toEssex();
     altTransEssex->getTag()="mapped-transcript";
     root->append(altTransEssex);
@@ -264,6 +266,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 	  const AlternativeStructure &s=**cur;
 	  Essex::CompositeNode *msg=s.msg;
 	  s.transcript->loadSequence(altSeqStr);
+	  s.transcript->computePhases();
 	  Essex::CompositeNode *node=s.transcript->toEssex();
 	  if(s.structureChange.anyChange()) {
 	    Essex::CompositeNode *changeNode=
