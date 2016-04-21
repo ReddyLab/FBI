@@ -739,7 +739,7 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
 	  refLen=region.seq.getLength()-localPos;
 
 	// Do the substitution in the alt genome
-	cout<<"substituting "<<refAllele<<"->"<<altAllele<<" at "<<localPos-deltas<<endl;
+	//cout<<"substituting "<<refAllele<<"->"<<altAllele<<" at "<<localPos-deltas<<endl;
 	seq.replaceSubstring(localPos-deltas,refLen,altAllele);
 	++variantsApplied;
 
