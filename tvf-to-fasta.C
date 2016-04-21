@@ -516,6 +516,7 @@ const Variant *Application::disambiguateOverlaps(int &v,const int numVariants,
   Vector<const Variant*> closure;
   transitiveClosure(variants,v,numVariants,ploid,loci,closure);
   if(closure.isEmpty()) return NULL;
+TRACE
 
   // Find the longest variant (by ref length) in the closure (i.e., the
   // longest deletion)
@@ -718,7 +719,6 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
       // Iterate over variants
       const int numVariants=region.variants.size();
       int variantsApplied=0, indelVariantsApplied=0, mismatches=0;
-      cout<<numVariants<<endl;
       for(int v=0 ; v<numVariants ; ) {
 	bool refMismatch;
 	const Variant *variant=
