@@ -205,7 +205,7 @@ void EnumerateAltStructures::addIfUnique(TranscriptSignals signals)
   if(signals.anyCryptic()) signals.getChange().crypticSite=true;
   Essex::CompositeNode *msg=NULL;
   GffTranscript *transcript=signals.toTranscript(genome,sensors,msg);
-  transcript->toGff(cout);cout<<endl;
+  //transcript->toGff(cout);cout<<endl;
   for(Vector<AlternativeStructure*>::iterator cur=altStructures.begin(), 
 	end=altStructures.end() ; cur!=end ; ++cur) {
     const AlternativeStructure &other=**cur;
@@ -216,6 +216,7 @@ void EnumerateAltStructures::addIfUnique(TranscriptSignals signals)
   }
   int ejcDistance;
   ProteinFate fate=nmd.predict(*transcript,genome,ejcDistance);
+  cout<<fate<<endl;
   AlternativeStructure *structure=new AlternativeStructure(transcript,fate);
   structure->msg=msg;
   structure->ejcDistance=ejcDistance;
