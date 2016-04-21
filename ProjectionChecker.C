@@ -162,7 +162,6 @@ TranscriptSignals *ProjectionChecker::findBrokenSpliceSites()
 	bool broken=!checkDonor(refExon,altExon,weakened,consensus,window);
 	TranscriptSignal &signal=signals->addSignal(GT,altEnd,0.0);
 	signal.broken=broken; signal.weakened=weakened;
-	if(broken) cout<<"BROKEN "<<weakened<<endl;
 	signal.seq=weakened ? window : consensus;
       }
       else signals->addSignal(TES,altEnd,0.0);
@@ -258,7 +257,7 @@ bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
       + getParsedWindow(*sensors.donorSensor,altBegin,altSubstrate)
       + " " + altScore;
     weakened=true;
-    return false;
+    //return false;
   }
   return true;
 }  
@@ -290,7 +289,7 @@ bool ProjectionChecker::checkAcceptor(GffExon &refExon,GffExon &altExon,
       + getParsedWindow(*sensors.acceptorSensor,altBegin,altSubstrate)
       + " " + altScore;
     weakened=true; 
-    return false; 
+    //return false; 
   }
   return true;
 }

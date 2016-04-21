@@ -174,6 +174,7 @@ void EnumerateAltStructures::compute()
     const int n=alternatives[i].size();
     if(n<1) return;
     iter.addUnit(n);
+    cout<<n<<" alternatives"<<endl;
   }
   for(iter.reset() ; iter.hasMore() ; iter.advance()) {
     Array1D<int> combination;
