@@ -162,7 +162,7 @@ TranscriptSignals *ProjectionChecker::findBrokenSpliceSites()
 	bool broken=!checkDonor(refExon,altExon,weakened,consensus,window);
 	TranscriptSignal &signal=signals->addSignal(GT,altEnd,0.0);
 	signal.broken=broken; signal.weakened=weakened;
-	if(broken) cout<<"BROKEN"<<endl;
+	if(broken) cout<<"BROKEN "<<weakened<<endl;
 	signal.seq=weakened ? window : consensus;
       }
       else signals->addSignal(TES,altEnd,0.0);
