@@ -135,6 +135,7 @@ ContentType EnumerateAltStructures::classifyContent(TranscriptSignal prev,
 
 void EnumerateAltStructures::compute()
 {
+  cout<<"allowIntronRetention="<<allowIntronRetention<<endl;
   // Generate lists of alternative splice sites for each broken one
   const int numSignals=original.numSignals();
   Array1D< Vector<TranscriptSignal> > alternatives(numSignals);
