@@ -216,12 +216,13 @@ void EnumerateAltStructures::addIfUnique(TranscriptSignals signals)
   }
   int ejcDistance;
   ProteinFate fate=nmd.predict(*transcript,genome,ejcDistance);
-  cout<<fate<<endl;
+  //cout<<fate<<endl;
   AlternativeStructure *structure=new AlternativeStructure(transcript,fate);
   structure->msg=msg;
   structure->ejcDistance=ejcDistance;
   structure->structureChange=signals.getChange();
   altStructures.push_back(structure);
+  cout<<altStructures.size()<<" Structures"<<endl;
 }
 
 
