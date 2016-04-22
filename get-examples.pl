@@ -270,7 +270,9 @@ while(1)
 	    my $containsNs=($context=~/N/);
 	    #####
 
-		if($numDonors<$MAX_DONORS &&
+		my $consensus=substr($context,80,2);
+		if($consensus eq "GT" &&
+		   $numDonors<$MAX_DONORS &&
 		   length($context)==$DONOR_CONTEXT_LENGTH &&
 		   ++$featuresSeen{$signature}<=$MAX_DUPLICATE_COUNT &&
 		   $context!~/N/)
@@ -282,7 +284,10 @@ while(1)
 		$sigBegin=$exon->getBegin()-2;
 		$signature="$sigBegin,2";
 		$featureTypes{$signature}="acceptor";
-		if($numAcceptors<$MAX_ACCEPTORS &&
+
+		my $consensus=substr($context,80,2);
+		if($consensus eq "AG" &&
+		   $numAcceptors<$MAX_ACCEPTORS &&
 		   length($context)==$ACCEPTOR_CONTEXT_LENGTH &&
 		   ++$featuresSeen{$signature}<=$MAX_DUPLICATE_COUNT &&
 		   $context!~/N/)
