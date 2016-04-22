@@ -749,7 +749,7 @@ void FBI::parseVariants(const String &s,Vector<Variant> &variants)
 
 Essex::CompositeNode *FBI::makeEssexVariants()
 {
-  Essex::CompositeNode *parent=new Essex::CompsiteNode("variants");
+  Essex::CompositeNode *parent=new Essex::CompositeNode("variants");
   const int numVariants=variants.size();
   for(int i=0 ; i<numVariants ; ++i) {
     const Variant &v=variants[i];
