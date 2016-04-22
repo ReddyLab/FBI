@@ -120,8 +120,8 @@ close(STOPCODONS);
 # Non-Exons
 #######################################################################
 my $pool;
-appendToPool("introns$iso.fasta",\$pool);
-appendToPool("intergenic$iso.fasta",\$pool);
+appendToPool("introns.fasta",\$pool);
+appendToPool("intergenic.fasta",\$pool);
 getExampleContent("initial-exons",\$pool);
 getExampleContent("internal-exons",\$pool);
 getExampleContent("final-exons",\$pool);
@@ -131,18 +131,18 @@ getExampleContent("single-exons",\$pool);
 # Non-Intergenic
 #######################################################################
 undef $pool;
-appendToPool("initial-exons$iso.fasta",\$pool);
-appendToPool("final-exons$iso.fasta",\$pool);
-appendToPool("single-exons$iso.fasta",\$pool);
+appendToPool("initial-exons.fasta",\$pool);
+appendToPool("final-exons.fasta",\$pool);
+appendToPool("single-exons.fasta",\$pool);
 getExampleContent("intergenic",\$pool);
 
 #######################################################################
 # Non-Introns
 #######################################################################
 undef $pool;
-appendToPool("internal-exons$iso.fasta",\$pool);
-appendToPool("initial-exons$iso.fasta",\$pool);
-appendToPool("final-exons$iso.fasta",\$pool);
+appendToPool("internal-exons.fasta",\$pool);
+appendToPool("initial-exons.fasta",\$pool);
+appendToPool("final-exons.fasta",\$pool);
 getExampleContent("introns",\$pool);
 
 #------------------------------------------------------------
@@ -165,10 +165,10 @@ sub getExampleContent
     my $nonType="non-$type";
     my $poolLen=length($$pool);
     my $writer=new FastaWriter;
-    open(OUT,">$nonType$iso.fasta") || die;
+    open(OUT,">$nonType.fasta") || die;
     my $pos=0;
     my $i=0;
-    my $reader=new FastaReader("$type$iso.fasta");
+    my $reader=new FastaReader("$type.fasta");
     while(1)
       {
 	my ($defline,$sequence)=$reader->nextSequence();
