@@ -604,7 +604,7 @@ String FBI::loadSeq(const String &filename,String &CIGAR)
   if(!attr.isDefined("cigar")) 
     throw String("No CIGAR string found on defline: ")+altDefline;
   CIGAR=attr["cigar"];
-  parseVariants(attr["variants"]);
+  parseVariants(attr["variants"],variants);
   return seq;
 }
 
