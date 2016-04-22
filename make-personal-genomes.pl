@@ -126,7 +126,7 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   while(1) {
     my ($def,$seq)=$fastaReader->nextSequence();
     last unless $def;
-    $def=~/>\S+\s+\/individual=(\S+)\s+\/allele=(\d+)\s+\/locus=(\S+)\s+\/coord=(\S+)\s+\/cigar=(\S+)\s+\/variants=(\S+)/
+    $def=~/>\S+\s+\/individual=(\S+)\s+\/allele=(\d+)\s+\/locus=(\S+)\s+\/coord=(\S+)\s+\/cigar=(\S+)\s+\/variants=(\S*)/
       || die "Can't parse defline: $def\n";
     my ($indivID,$alleleNum,$geneID,$coord,$cigar,$variants)=
       ($1,$2,$3,$4,$5,$6);
