@@ -183,7 +183,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   append(root,"alignment",CIGAR);
   //append(root,"defline",altDefline);
   Essex::CompositeNode *essexVariants=makeEssexVariants();
-  append(root,"variants",essexVariants);
+  root->append(essexVariants);
   refTrans->computePhases();
   Essex::CompositeNode *refTransEssex=refTrans->toEssex();
   refTransEssex->getTag()="reference-transcript";
