@@ -222,7 +222,6 @@ void EnumerateAltStructures::addIfUnique(TranscriptSignals signals)
   structure->ejcDistance=ejcDistance;
   structure->structureChange=signals.getChange();
   altStructures.push_back(structure);
-  cout<<altStructures.size()<<" Structures"<<endl;
 }
 
 

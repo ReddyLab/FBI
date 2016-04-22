@@ -719,6 +719,7 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
       // Iterate over variants
       const int numVariants=region.variants.size();
       int variantsApplied=0, indelVariantsApplied=0, mismatches=0;
+      String deflineVariants;
       for(int v=0 ; v<numVariants ; ) {
 	bool refMismatch;
 	const Variant *variant=
@@ -739,9 +740,13 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
 	  refLen=region.seq.getLength()-localPos;
 
 	// Do the substitution in the alt genome
-	//cout<<"substituting "<<refAllele<<"->"<<altAllele<<" at "<<localPos-deltas<<endl;
 	seq.replaceSubstring(localPos-deltas,refLen,altAllele);
 	++variantsApplied;
+
+	// Add to the defline
+	if(!deflineVariants.empty()) deflineVariants+=",";
+	deflineVariants+=variant->id+":"+variant->chr+":"+localPos-deltas
+	  +refAllele+":"+altAllele;
 
 	// Update the delta (difference in coordinates btwn ref/alt)
 	const int delta=refLen-altLen;
@@ -761,16 +766,11 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
       String def=String(">")+individualID+"_"+ploid+" /individual="+
 	individualID+" /allele="+ploid+" /locus="+region.id+" /coord="+
 	region.chr+":"+region.begin+"-"+region.end+":"+
-	region.strand+" /cigar="+cigar;
+	region.strand+" /cigar="+cigar+"/variants="+deflineVariants;
       writer.addToFasta(def,seq,os);
       if(!wantIndiv.isEmpty()) region.clearSeq(); // save memory
 
       // Report stats
-
-      //###
-      //if(variantsApplied<5 || indelVariantsApplied==0) continue;
-      // ###
-
       if(variantsApplied>0 || indelVariantsApplied>0 || mismatches>0)
 	cout<<individualID<<"\thap"<<ploid<<"\t"<<region.id<<"\t"
 	    <<variantsApplied<<" applied\t"
