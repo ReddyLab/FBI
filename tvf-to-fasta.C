@@ -278,7 +278,8 @@ void Application::convert(File &tvf,ostream &os,const String genomeFile)
       for(int j=0 ; j<PLOIDY ; ++j) {
 	String def=String(">reference_")+j+" /individual=reference"+
 	  " /allele="+j+" /locus="+region.id+" /coord="+region.chr+":"
-	  +region.begin+"-"+region.end+":"+region.strand+" /cigar="+cigar;
+	  +region.begin+"-"+region.end+":"+region.strand+" /cigar="+cigar
+	  +" /variants=";
 	writer.addToFasta(def,seq,os);
       }
     }
