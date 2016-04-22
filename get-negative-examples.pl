@@ -4,9 +4,7 @@ use GffTranscriptReader;
 use FastaReader;
 use FastaWriter;
 
-my $usage="$0 <isochore>      [eg., 0-43]";
-die "$usage\n" unless @ARGV==1;
-my ($iso)=@ARGV;
+my $iso="0-100";
 
 my $MAX_EXAMPLES=1000;#1000000;#2000;
 my $DONOR_CONTEXT_BEGIN=-80;
@@ -18,19 +16,19 @@ my $START_CONTEXT_LENGTH=163;
 my $STOP_CONTEXT_BEGIN=-80;
 my $STOP_CONTEXT_LENGTH=163;
 
-my $numStartCodons=`grep -c '>' start-codons$iso.fasta`;
-my $numStopCodons=`grep -c '>' stop-codons$iso.fasta`;
-my $numDonors=`grep -c '>' donors$iso.fasta`;
-my $numAcceptors=`grep -c '>' acceptors$iso.fasta`;
+my $numStartCodons=`grep -c '>' start-codons.fasta`;
+my $numStopCodons=`grep -c '>' stop-codons.fasta`;
+my $numDonors=`grep -c '>' donors.fasta`;
+my $numAcceptors=`grep -c '>' acceptors.fasta`;
 
-open(DONORS,">non-donors$iso.fasta");
-open(ACCEPTORS,">non-acceptors$iso.fasta");
-open(STARTCODONS,">non-start-codons$iso.fasta");
-open(STOPCODONS,">non-stop-codons$iso.fasta");
+open(DONORS,">non-donors.fasta");
+open(ACCEPTORS,">non-acceptors.fasta");
+open(STARTCODONS,">non-start-codons.fasta");
+open(STOPCODONS,">non-stop-codons.fasta");
 
-my $exonHash=FastaReader::readAll("internal-exons$iso.fasta");
+my $exonHash=FastaReader::readAll("internal-exons.fasta");
 my @exons=values %$exonHash;
-my $intergenicHash=FastaReader::readAll("intergenic$iso.fasta");
+my $intergenicHash=FastaReader::readAll("intergenic.fasta");
 my @intergenic=values %$intergenicHash;
 
 #######################################################################
