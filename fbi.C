@@ -731,7 +731,7 @@ void FBI::parseVariants(const String &s,Vector<Variant> &variants)
 {
   Vector<String> fields;
   s.getFields(fields,",");
-  const int numFields=field.size();
+  const int numFields=fields.size();
   for(int i=0 ; i<numFields ; ++i) {
     if(!variantRegex.match(fields[i])) throw "Can't parse variant "+fields[i];
     String id=variantRegex[1], chr=variantRegex[2];

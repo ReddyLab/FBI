@@ -8,7 +8,7 @@
 #define INCL_Variant_H
 #include <iostream>
 #include "BOOM/String.H"
-#include "BOOM/Comparator.H"
+#include "BOOM/VectorSorter.H"
 #include "BOOM/Vector.H"
 using namespace std;
 using namespace BOOM;
