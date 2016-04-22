@@ -10,7 +10,7 @@ my $MAX_DUPLICATE_COUNT=100; # set to 1 to eliminate duplicates
 
 # PROCESS THE COMMAND LINE
 my $name=ProgramName::get();
-my $usage="$name <*.gff> <*.fasta>"
+my $usage="$name <*.gff> <*.fasta>";
 die "$usage\n" unless @ARGV==4;
 my ($gffFilename,$fastaFilename,$stopCodons,$shouldTrim)=@ARGV;
 $shouldTrim=0;
