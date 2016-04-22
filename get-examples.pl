@@ -226,7 +226,7 @@ while(1)
 	    #####
 
 	    my $consensus=substr($context,80,2);
-	    if($consensus eq "GT" &&
+	    if(($consensus eq "GT" || $consensus eq "GC") &&
 	       $numDonors<$MAX_DONORS &&
 	       length($context)==$DONOR_CONTEXT_LENGTH &&
 	       ++$featuresSeen{$signature}<=$MAX_DUPLICATE_COUNT &&
@@ -271,7 +271,7 @@ while(1)
 	    #####
 
 		my $consensus=substr($context,80,2);
-		if($consensus eq "GT" &&
+		if(($consensus eq "GT" || $consensus eq "GC") &&
 		   $numDonors<$MAX_DONORS &&
 		   length($context)==$DONOR_CONTEXT_LENGTH &&
 		   ++$featuresSeen{$signature}<=$MAX_DUPLICATE_COUNT &&
