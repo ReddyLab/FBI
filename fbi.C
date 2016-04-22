@@ -85,6 +85,7 @@ private:
   void percentMatch(int matches,int refLen,int altLen,
 		    Essex::CompositeNode *parent);
   void parseVariants(const String &,Vector<Variant> &);
+  Essex::CompositeNode *makeEssexVariants();
 };
 
 
@@ -180,7 +181,9 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   append(root,"vcf-warnings",VCFwarnings);
   append(root,"vcf-errors",VCFerrors);
   append(root,"alignment",CIGAR);
-  append(root,"defline",altDefline);
+  //append(root,"defline",altDefline);
+  Essex::CompositeNode *essexVariants=makeEssexVariants();
+  append(root,"variants",essexVariants);
   refTrans->computePhases();
   Essex::CompositeNode *refTransEssex=refTrans->toEssex();
   refTransEssex->getTag()="reference-transcript";
@@ -740,10 +743,21 @@ void FBI::parseVariants(const String &s,Vector<Variant> &variants)
     Variant v(id,chr,pos);
     v.addAllele(ref); v.addAllele(alt);
   }
-
-  // /variants=chr6@1764640:chr6:19:C:T,chr6@1764699:chr6:78:G:A,chr6@1764831:chr6:211::T,chr6@1765414:chr6:794:A:G,chr6@1765447:chr6:827:C:T,chr6@1765760:chr6:1140:T:G,chr6@1765845:chr6:1225:G:A,chr6@1765886:chr6:1267::AATT,chr6@1765975:chr6:1359:A:G
 }
 
+
+
+Essex::CompositeNode *FBI::makeEssexVariants()
+{
+  Essex::CompositeNode *parent=new Essex::CompsiteNode("variants");
+  const int numVariants=variants.size();
+  for(int i=0 ; i<numVariants ; ++i) {
+    const Variant &v=variants[i];
+    String s=v.id+":"+v.chr+":"+v.pos+":"+v.alleles[0]+":"+v.alleles[1];
+    parent->append(s);
+  }
+  return parent;
+}
 
 
 
