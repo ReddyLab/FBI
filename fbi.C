@@ -733,11 +733,9 @@ void FBI::percentMatch(int matches,int refLen,int altLen,
 
 void FBI::parseVariants(const String &s,Vector<Variant> &variants)
 {
-  cout<<"parsing "<<s<<endl;
   Vector<String> fields;
   s.getFields(fields,",");
   const int numFields=fields.size();
-  cout<<numFields<<" fields"<<endl;
   for(int i=0 ; i<numFields ; ++i) {
     if(!variantRegex.match(fields[i])) throw "Can't parse variant "+fields[i];
     String id=variantRegex[1], chr=variantRegex[2];
@@ -745,7 +743,7 @@ void FBI::parseVariants(const String &s,Vector<Variant> &variants)
     String ref=variantRegex[4], alt=variantRegex[5];
     Variant v(id,chr,pos);
     v.addAllele(ref); v.addAllele(alt);
-    TRACE
+    variants.push_back(v);
   }
 }
 
