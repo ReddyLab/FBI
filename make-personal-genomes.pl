@@ -126,16 +126,17 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   while(1) {
     my ($def,$seq)=$fastaReader->nextSequence();
     last unless $def;
-    $def=~/>\S+\s+\/individual=(\S+)\s+\/allele=(\d+)\s+\/locus=(\S+)\s+\/coord=(\S+)\s+\/cigar=(\S+)/
+    $def=~/>\S+\s+\/individual=(\S+)\s+\/allele=(\d+)\s+\/locus=(\S+)\s+\/coord=(\S+)\s+\/cigar=(\S+)\s+\/variants=(\S+)/
       || die "Can't parse defline: $def\n";
-    my ($indivID,$alleleNum,$geneID,$coord,$cigar)=($1,$2,$3,$4,$5);
+    my ($indivID,$alleleNum,$geneID,$coord,$cigar,$variants)=
+      ($1,$2,$3,$4,$5,$6);
     if($keepIDs{$indivID}) {
       my $file=$fastaFiles{$indivID}->[$alleleNum];
       my $key="$indivID $geneID";
       my $numWarn=0+$warnings{$key};
       my $numErr=0+$errors{$key};
       open(FASTA,">>$file") || die $file;
-      $def=">${geneID}_$alleleNum /coord=$coord /margin=$MARGIN_AROUND_GENE /cigar=$cigar /warnings=$numWarn /errors=$numErr";
+      $def=">${geneID}_$alleleNum /coord=$coord /margin=$MARGIN_AROUND_GENE /cigar=$cigar /warnings=$numWarn /errors=$numErr /variants=$variants";
       $fastaWriter->addToFasta($def,$seq,\*FASTA);
       close(FASTA);
     }
