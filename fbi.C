@@ -26,6 +26,7 @@
 #include "GarbageCollector.H"
 #include "StartCodonFinder.H"
 #include "NMD.H"
+#include "Variant.H"
 using namespace std;
 using namespace BOOM;
 
@@ -51,7 +52,8 @@ private:
   String CIGAR;
   Essex::CompositeNode *root;
   Essex::Node *startCodonMsg;
-  Regex warningsRegex, errorsRegex;
+  Vector<Variant> variants;
+  Regex warningsRegex, errorsRegex, variantRegex;
   int VCFwarnings, VCFerrors;
   float openPenalty, extendPenalty;
   int bandwidth;
@@ -82,6 +84,7 @@ private:
   float alignProteins(const String &refStr,const String &altStr,int &matches);
   void percentMatch(int matches,int refLen,int altLen,
 		    Essex::CompositeNode *parent);
+  void parseVariants(const String &,Vector<Variant> &);
 };
 
 
@@ -116,7 +119,8 @@ int main(int argc,char *argv[])
 
 FBI::FBI()
   : warningsRegex("/warnings=(\\d+)"), errorsRegex("/errors=(\\d+)"), 
-    VCFwarnings(0), VCFerrors(0), startCodonMsg(NULL), substMatrix(NULL)
+    VCFwarnings(0), VCFerrors(0), startCodonMsg(NULL), substMatrix(NULL),
+    variantRegex("(\\S+):(\\S+):(\\d+):([^:]*):([^:]*)")
   {
     // ctor
   }
@@ -720,6 +724,26 @@ void FBI::percentMatch(int matches,int refLen,int altLen,
   node->append(String("alt=")+altLen);
   parent->append(node);
 }
+
+
+
+void FBI::parseVariants(const String &s,Vector<Variant> &variants)
+{
+  Vector<String> fields;
+  s.getFields(fields,",");
+  const int numFields=field.size();
+  for(int i=0 ; i<numFields ; ++i) {
+    if(!variantRegex.match(fields[i])) throw "Can't parse variant "+fields[i];
+    String id=variantRegex[1], chr=variantRegex[2];
+    int pos=variantRegex[3].asInt();
+    String ref=variantRegex[4], alt=variantRegex[5];
+    Variant v(id,chr,pos);
+    v.addAllele(ref); v.addAllele(alt);
+  }
+
+  // /variants=chr6@1764640:chr6:19:C:T,chr6@1764699:chr6:78:G:A,chr6@1764831:chr6:211::T,chr6@1765414:chr6:794:A:G,chr6@1765447:chr6:827:C:T,chr6@1765760:chr6:1140:T:G,chr6@1765845:chr6:1225:G:A,chr6@1765886:chr6:1267::AATT,chr6@1765975:chr6:1359:A:G
+}
+
 
 
 

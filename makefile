@@ -3101,3 +3101,9 @@ $(OBJ)/StartCodonFinder.o:\
 	$(CC) $(CFLAGS) -o $(OBJ)/StartCodonFinder.o -c \
 		StartCodonFinder.C
 #---------------------------------------------------------
+$(OBJ)/Variant.o:\
+		Variant.C\
+		Variant.H
+	$(CC) $(CFLAGS) -o $(OBJ)/Variant.o -c \
+		Variant.C
+#---------------------------------------------------------
