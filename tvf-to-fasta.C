@@ -766,7 +766,7 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
       String def=String(">")+individualID+"_"+ploid+" /individual="+
 	individualID+" /allele="+ploid+" /locus="+region.id+" /coord="+
 	region.chr+":"+region.begin+"-"+region.end+":"+
-	region.strand+" /cigar="+cigar+"/variants="+deflineVariants;
+	region.strand+" /cigar="+cigar+" /variants="+deflineVariants;
       writer.addToFasta(def,seq,os);
       if(!wantIndiv.isEmpty()) region.clearSeq(); // save memory
 
