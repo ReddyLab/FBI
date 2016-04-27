@@ -22,9 +22,7 @@
 using namespace std;
 using namespace BOOM;
 
-bool SANITY_CHECKS=true;
 
-int PLOIDY=2; // can override on command line with -p
 
 inline int min(int a,int b) { return a<b ? a : b; }
 
@@ -85,6 +83,8 @@ public:
   Application();
   int main(int argc,char *argv[]);
 protected:
+  bool SANITY_CHECKS, DRY_RUN;
+  int PLOIDY; // default=2, can override on command line with -p
   String twoBitToFa;
   String tempfile;
   Regex gzRegex;
@@ -98,11 +98,11 @@ protected:
   Set<String> males;
   bool knowMales; // whether the list of males was given
   void loadMales(const String &);
-  void convert(File &tvf,ostream &,const String genomeFile);
+  void convert(File &tvf,ostream *,const String genomeFile);
   void parseHeader(const String &line);
   void loadRegions(const String &regionsFilename,const String &genomeFilename,
 		   const String &tempFile);
-  void emit(const String &individualID,const Vector<Genotype> &loci,ostream &);
+  void emit(const String &individualID,const Vector<Genotype> &loci,ostream *);
   void updateCigar(int refLen,int altLen,int localPos,int &matchBegin,
 		   String &cigar,int delta);
   bool skipGender(const Region &region,bool male,int ploid);
@@ -137,7 +137,8 @@ int main(int argc,char *argv[])
 
 
 Application::Application()
-  : twoBitToFa("twoBitToFa"), gzRegex("gz$"), tempfile(TempFilename::get())
+  : twoBitToFa("twoBitToFa"), gzRegex("gz$"), tempfile(TempFilename::get()),
+    PLOIDY(2), SANITY_CHECKS(true), DRY_RUN(false)
 {
   // ctor
   randomize();
@@ -148,9 +149,10 @@ Application::Application()
 int Application::main(int argc,char *argv[])
 {
   // Process command line
-  CommandLine cmd(argc,argv,"hrt:i:c:y:p:s");
+  CommandLine cmd(argc,argv,"dhrt:i:c:y:p:s");
   if(cmd.numArgs()!=4)
     throw String("\ntvf-to-fasta [options] <in.tvf> <genome.2bit> <regions.bed> <out.fasta>\n\
+     -d : dry run - no output, just report errors\n\
      -t path : path to twoBitToFa\n\
      -r : emit reference sequence also\n\
      -i ID : only this sample (individual)\n\
@@ -176,6 +178,7 @@ int Application::main(int argc,char *argv[])
   nonhuman=cmd.option('h');
   if(cmd.option('p')) PLOIDY=cmd.optParm('p').asInt();
   if(cmd.option('s')) SANITY_CHECKS=false;
+  if(cmd.option('e')) DRY_RUN=true;
 
   // Load regions
   loadRegions(regionsFilename,genomeFile,fastaFilename);
@@ -183,16 +186,17 @@ int Application::main(int argc,char *argv[])
   // Process TVF file
   File *tvf=gzRegex.search(tvfFilename) ? new GunzipPipe(tvfFilename)
     : new File(tvfFilename);
-  ofstream os(fastaFilename.c_str());
-  convert(*tvf,os,genomeFile);
+  ofstream *os=DRY_RUN ? NULL : new ofstream(fastaFilename.c_str());
+  convert(*tvf,*os,genomeFile);
   delete tvf;
+  delete os;
 
   return 0;
 }
 
 
 
-void Application::convert(File &tvf,ostream &os,const String genomeFile)
+void Application::convert(File &tvf,ostream *os,const String genomeFile)
 {
   // Parse header
   String line=tvf.getline();
@@ -214,7 +218,7 @@ void Application::convert(File &tvf,ostream &os,const String genomeFile)
 	  " /allele="+j+" /locus="+region.id+" /coord="+region.chr+":"
 	  +region.begin+"-"+region.end+":"+region.strand+" /cigar="+cigar
 	  +" /variants=";
-	writer.addToFasta(def,seq,os);
+	if(os) writer.addToFasta(def,seq,*os);
       }
     }
   }
@@ -631,7 +635,7 @@ void Application::updateCigar(int refLen,int altLen,int localPos,
 
 
 void Application::emit(const String &individualID,const Vector<Genotype> &loci,
-		       ostream &os)
+		       ostream *os)
 {
   bool male=knowMales ? males.isMember(individualID) : true;
 
@@ -702,7 +706,7 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
 	individualID+" /allele="+ploid+" /locus="+region.id+" /coord="+
 	region.chr+":"+region.begin+"-"+region.end+":"+
 	region.strand+" /cigar="+cigar+" /variants="+deflineVariants;
-      writer.addToFasta(def,seq,os);
+      if(os) writer.addToFasta(def,seq,*os);
       if(!wantIndiv.isEmpty()) region.clearSeq(); // save memory
 
       // Report stats
@@ -787,66 +791,5 @@ void Variant::trim()
 
   //if(debug) cout<<"AFTER: "<<*this<<endl<<endl;
 }
-
-
-
-/*
-void Variant::trim()
-{
-  const int numAlleles=alleles.size();
-  
-  // First, identify length of common sequence on the left
-  int begin=0; // first non-matching position
-  const String &ref=alleles[0];
-  const int refLen=ref.length();
-  while(begin<refLen) {
-    const char r=ref[begin];
-    bool match=true;
-    for(int i=1 ; i<numAlleles ; ++i) {
-      const String &alt=alleles[i];
-      if(begin>=alt.length()) { match=false; break; }
-      if(alleles[i][begin]!=r) { match=false; break; }
-    }
-    if(!match) break;
-    ++begin;
-  }
-  //cout<<"begin="<<begin<<endl;
-  // begin now points to the first column in which either there is a 
-  // mismatch or we're past the end of one allele (ref or alt)
-
-  // Next, identify common sequence on the right
-  Array1D<int> end(numAlleles);
-  for(int i=0 ; i<numAlleles ; ++i) end[i]=alleles[i].length()-1;
-  while(1) {
-    bool empty=false;
-    for(int i=0 ; i<numAlleles ; ++i) if(end[i]<begin) { empty=true; break; }
-    if(empty) break;
-    const char r=ref[end[0]];
-    bool match=true;
-    for(int i=1 ; i<numAlleles ; ++i) {
-      if(end[i]<0) { match=false; break; }
-      if(alleles[i][end[i]]!=r) { match=false; break; }
-    }
-    if(!match) break;
-    for(int i=0 ; i<numAlleles ; ++i) --end[i];
-  }
-  // Now everything after end[i] is a common suffix
-
-  //for(int i=0 ; i<numAlleles ; ++i) cout<<"end["<<i<<"]="<<end[i]<<endl;
-
-  // Trim the alleles
-  for(int i=0 ; i<numAlleles ; ++i) {
-    int len=end[i]+1-begin;
-    if(len<0) len=0;
-    alleles[i]=alleles[i].substring(begin,len);
-  }
-
-  //for(int i=0 ; i<numAlleles ; ++i) cout<<"allele["<<i<<"]="<<alleles[i]<<endl;
-
-  // Finally, adjust the position of this variant
-  pos+=begin;
-}
- */
-
 
 

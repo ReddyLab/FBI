@@ -5,9 +5,14 @@ use FastaReader;
 use FastaWriter;
 use GffTranscriptReader;
 use ConfigFile;
+use Getopt::Std;
+our ($opt_d);
+getopts('d');
 
 die "\n
-make-personal-genomes.pl <fbi.config> <genes.gff> <out-dir>
+make-personal-genomes.pl [-d] <fbi.config> <genes.gff> <out-dir>
+
+-d = dry run: no output, just report errors
 
 Assumptions:
  * VCF files must be zipped with bgzip and have accompanying tbi indexes
@@ -25,6 +30,7 @@ my ($configFile,$gffFile,$outDir)=@ARGV;
 #==============================================================
 
 
+my $DRY_RUN=$opt_d;
 my $DEBUG=0;
 my $VERBOSE=1;
 my $MARGIN_AROUND_GENE=1000;
@@ -90,31 +96,30 @@ for(my $j=1 ; $j<=$ploidy ; ++$j) {
 #==============================================================
 
 my $numGenes=@$genes;
-open(GFF,">$outGFF") || die "Can't create file $outGFF";
+if(!$DRY_RUN) { open(GFF,">$outGFF") || die "Can't create file $outGFF" }
 for(my $i=0 ; $i<$numGenes ; ++$i) {
   my $gene=$genes->[$i];
   my $chr=$gene->getSubstrate();
   my $begin=$gene->getBegin()-$MARGIN_AROUND_GENE;
   my $end=$gene->getEnd()+$MARGIN_AROUND_GENE;
-  writeLocalGFF($gene,$begin,*GFF);
+  if(!$DRY_RUN) { writeLocalGFF($gene,$begin,*GFF) }
   if($begin<0) { $begin=0 }
   next unless defined($chromLen{$chr});
   if($end>$chromLen{$chr}) { $end=$chromLen{$chr} }
   my $strand=$gene->getStrand();
   my $name=$gene->getId();
-  #print "$name $chr $begin $end\n";
   writeBed4($chr,$begin,$end,$name,$tempBedFile);
   System("$twoBitToFa -bed=$tempBedFile -noMask $twoBitFile $refGeneFasta");
   my $chrVcfFile=$chrToVCF{$chr};
   writeBed3($chr,$begin,$end,$tempBedFile);
   System("$TABIX -h $chrVcfFile -R $tempBedFile > $geneVcfFile");
-  #System("$FBI/vcf-to-tvf -i $IDfile -c -v $geneVcfFile $geneTvfFile");
   System("$FBI/vcf-to-tvf -i $IDfile $geneVcfFile $geneTvfFile");
   writeBed6($chr,$begin,$end,$name,$strand,$tempBedFile);
   system("rm -f $altGeneFasta");
   my $dashY=$genderFile eq "" ? "" : "-y $genderFile";
+  my $dashD=$DRY_RUN ? "-d" : "";
   my $errFile="$outDir/err.out";
-  System("$FBI/tvf-to-fasta $dashY -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $errFile");
+  System("$FBI/tvf-to-fasta $dashD $dashY -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $errFile");
   my $err=`cat $errFile`;
   if($err=~/error/ || $err=~/Abort/) { die $err }
   my (%warnings,%errors);
@@ -122,6 +127,7 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   system("cat $errFile >> $outDir/errors.txt");
   die unless -e $altGeneFasta;
   die if -z $altGeneFasta;
+  next if $DRY_RUN;
   my $fastaReader=new FastaReader($altGeneFasta);
   while(1) {
     my ($def,$seq)=$fastaReader->nextSequence();
