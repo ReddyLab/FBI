@@ -10,5 +10,12 @@ using namespace std;
 using namespace BOOM;
 
 
+ostream &operator<<(ostream &os,const Variant &v) 
+{
+  v.printOn(os);
+  return os;
+}
+
+
 
 

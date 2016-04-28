@@ -15,9 +15,10 @@ using namespace BOOM;
 
 
 enum VariantType {
-  SNP,
-  INSERTION,
-  DELETION
+  VARIANT_SNP,
+  VARIANT_INSERTION,
+  VARIANT_DELETION,
+  VARIANT_COMPLEX
 };
 
 
@@ -27,6 +28,7 @@ struct Variant {
   int refPos, altPos, i;
   Variant(const String &id,const String &chr,int refPos,int altPos,int i)
     : id(id), chr(chr), refPos(refPos), altPos(altPos), i(i) {}
+  Variant() {}
   void addAllele(const String &a) { alleles.push_back(a); }
   void printOn(ostream &os) const {
     os<<id<<":"<<chr<<":"<<refPos;
@@ -73,7 +75,7 @@ struct Variant {
     return alleles[0].length()==1 && alleles[allele].length()==1; }
   void trim();
 };
-ostream &operator<<(ostream &os,const Variant &v) { v.printOn(os); return os; }
+ostream &operator<<(ostream &os,const Variant &v);
 
 
 struct VariantComp : Comparator<Variant> { // For sorting variants by position

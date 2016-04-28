@@ -7,27 +7,29 @@
 #ifndef INCL_VariantClassifier_H
 #define INCL_VariantClassifier_H
 #include <iostream>
+#include "BOOM/Vector.H"
+#include "BOOM/GffTranscript.H"
 #include "Variant.H"
-
 using namespace std;
 using namespace BOOM;
 
-
-struct VariantInfo {
-  Variant variant;
-  VariantType type; // SNP/INSERTION/DELETION
-  FunctionalElement elem;
-  int distanceToSpliceSite;
-};
 
 class VariantClassifier {
 public:
   enum RefAlt {REF, ALT};
   enum FunctionalElement {
+    UTR,
     CDS,
-    SPLICE_SITE,
     INTRON,
+    SPLICE_SITE,
     INTERGENIC
+  };
+  struct VariantInfo {
+    Variant variant;
+    VariantType type; // SNP/INSERTION/DELETION
+    FunctionalElement elem;
+    int distanceToSpliceSite;
+    VariantInfo() : distanceToSpliceSite(-1) {}
   };
   VariantClassifier(const Vector<Variant> &,RefAlt,const GffTranscript &);
   const Vector<VariantInfo> &getCDSvariants() const;
@@ -35,9 +37,10 @@ public:
   const Vector<VariantInfo> &getNearSpliceVariants() const;
   const Vector<VariantInfo> &getAll() const;
 private:
-  Vector<VariantInfo> cdsVaiants, spliceSiteVariants, nearSpliceVariants;
+  Vector<VariantInfo> cdsVariants, spliceSiteVariants, nearSpliceVariants;
   Vector<VariantInfo> all;
   void classify(const Vector<Variant> &,RefAlt,const GffTranscript &);
+  VariantType getVariantType(const Variant &) const;
 };
 
 #endif
