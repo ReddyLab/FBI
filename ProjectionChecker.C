@@ -257,8 +257,14 @@ bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
   int refPos, pos;
   const String refDonor=getDonor(refExon,refSubstrate,refPos);
   altDonor=getDonor(altExon,altSubstrate,pos);
-  if(altDonor!=refDonor && !sensors.donorConsensuses.isMember(altDonor))
-    { weakened=false; return false; }
+  if(altDonor!=refDonor && !sensors.donorConsensuses.isMember(altDonor)) {
+    const offset=sensors.donorSensor->getConsensusOffset();
+    const int altBegin=altExon.getEnd()-offset;
+    const int refBegin=refExon.getEnd()-offset;
+    altWindow=getParsedWindow(*sensors.donorSensor,altBegin,altSubstrate);
+    weakened=false;
+    return false;
+  }
 
   // The reference must score above threshold, the alt must score below
   // threshold, and the difference must be at least a factor of 2:
@@ -294,17 +300,25 @@ bool ProjectionChecker::checkAcceptor(GffExon &refExon,GffExon &altExon,
   const String refAcceptor=getAcceptor(refExon,refSubstrate,refPos);
   altAcceptor=getAcceptor(altExon,altSubstrate,pos);
   if(altAcceptor!=refAcceptor && 
-     !sensors.acceptorConsensuses.isMember(altAcceptor))
-    { weakened=false; return false; }
+     !sensors.acceptorConsensuses.isMember(altAcceptor)) {
+    const int offset=sensors.acceptorSensor->getConsensusOffset();
+    const int altBegin=altExon.getBegin()-2-offset;
+    const int refBegin=refExon.getBegin()-2-offset;
+    altWindow=getParsedWindow(*sensors.acceptorSensor,altBegin,altSubstrate);
+    weakened=false;
+    return false;
+    }
   if(refScore>=cutoff && altScore<cutoff && refScore-altScore>=log(2)) { 
     const int offset=sensors.acceptorSensor->getConsensusOffset();
     const int altBegin=altExon.getBegin()-2-offset;
     const int refBegin=refExon.getBegin()-2-offset;
-    altWindow=
+    /*altWindow=
       getParsedWindow(*sensors.acceptorSensor,refBegin,refSubstrate)
       + " " +refScore + " "
       + getParsedWindow(*sensors.acceptorSensor,altBegin,altSubstrate)
       + " " + altScore;
+    */
+    altWindow=getParsedWindow(*sensors.acceptorSensor,altBegin,altSubstrate);
     weakened=true; 
     //return false; 
   }
