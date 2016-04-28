@@ -19,7 +19,7 @@ struct Variant {
   String id, chr;
   Vector<String> alleles; // alleles[0] is the ref; multiple alts are OK
   int refPos, altPos, i;
-  Variant(const String &id,const String &chr,int pos,int i=0)
+  Variant(const String &id,const String &chr,int refPos,int altPos,int i)
     : id(id), chr(chr), refPos(refPos), altPos(altPos), i(i) {}
   void addAllele(const String &a) { alleles.push_back(a); }
   void printOn(ostream &os) const {
