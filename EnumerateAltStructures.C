@@ -126,6 +126,7 @@ void EnumerateAltStructures::findSites(SignalType type,int begin,int end,
 			       contextWindowLen-consensusOffset-2);
       signal.cutoff=sensor->getCutoff();
       into.push_back(signal);
+      cout<<"ZZZ "<<signal.cutoff<<endl;
     }
   }
 }
