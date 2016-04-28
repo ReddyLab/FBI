@@ -2443,6 +2443,7 @@ $(OBJ)/fbi.o:\
 		fbi.C
 #---------------------------------------------------------
 fbi: \
+		$(OBJ)/VariantClassifier.o \
 		$(OBJ)/StartCodonFinder.o \
 		$(OBJ)/SignalSensors.o \
 		$(OBJ)/StructureChange.o \
@@ -2501,6 +2502,7 @@ fbi: \
 		$(OBJ)/ProjectionChecker.o \
 		$(OBJ)/fbi.o
 	$(CC) $(LDFLAGS) -o fbi \
+		$(OBJ)/VariantClassifier.o \
 		$(OBJ)/StartCodonFinder.o \
 		$(OBJ)/SignalSensors.o \
 		$(OBJ)/StructureChange.o \
@@ -3106,4 +3108,10 @@ $(OBJ)/Variant.o:\
 		Variant.H
 	$(CC) $(CFLAGS) -o $(OBJ)/Variant.o -c \
 		Variant.C
+#---------------------------------------------------------
+$(OBJ)/VariantClassifier.o:\
+		VariantClassifier.C\
+		VariantClassifier.H
+	$(CC) $(CFLAGS) -o $(OBJ)/VariantClassifier.o -c \
+		VariantClassifier.C
 #---------------------------------------------------------

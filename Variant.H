@@ -14,6 +14,12 @@ using namespace std;
 using namespace BOOM;
 
 
+enum VariantType {
+  SNP,
+  INSERTION,
+  DELETION
+};
+
 
 struct Variant {
   String id, chr;
