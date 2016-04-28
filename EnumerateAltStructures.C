@@ -44,9 +44,9 @@ void AlternativeStructure::reportCrypticSites(Essex::CompositeNode *parent)
     node->append(signal.getPos());
     node->append(signal.seq);
     node->append(signal.score);
+    node->append(signal.cutoff);
     parent->append(node);
-  }
-  
+  }  
 }
 
 
