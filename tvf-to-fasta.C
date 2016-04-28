@@ -668,7 +668,7 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
 	if(!variant) continue;
 
 	// Prepare to do the substitution
-	const int localPos=variant->pos-region.begin;
+	const int localPos=variant->refPos-region.begin;
 	const int state=loci[variant->i].alleles[ploid];
 	if(SANITY_CHECKS) if(!state) INTERNAL_ERROR;
 	const String &refAllele=variant->alleles[0];
@@ -786,7 +786,7 @@ void Variant::trim()
   //for(int i=0 ; i<numAlleles ; ++i) cout<<"allele["<<i<<"]="<<alleles[i]<<endl;
 
   // Finally, adjust the position of this variant
-  pos+=begin;
+  refPos+=begin;
 
   //if(debug) cout<<"AFTER: "<<*this<<endl<<endl;
 }
