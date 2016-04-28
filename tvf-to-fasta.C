@@ -178,7 +178,7 @@ int Application::main(int argc,char *argv[])
   nonhuman=cmd.option('h');
   if(cmd.option('p')) PLOIDY=cmd.optParm('p').asInt();
   if(cmd.option('s')) SANITY_CHECKS=false;
-  if(cmd.option('e')) DRY_RUN=true;
+  if(cmd.option('d')) DRY_RUN=true;
 
   // Load regions
   loadRegions(regionsFilename,genomeFile,fastaFilename);
