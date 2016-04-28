@@ -121,7 +121,7 @@ int main(int argc,char *argv[])
 FBI::FBI()
   : warningsRegex("/warnings=(\\d+)"), errorsRegex("/errors=(\\d+)"), 
     VCFwarnings(0), VCFerrors(0), startCodonMsg(NULL), substMatrix(NULL),
-    variantRegex("(\\S+):(\\S+):(\\d+):([^:]*):([^:]*)")
+    variantRegex("(\\S+):(\\S+):(\\d+):(\\d+):([^:]*):([^:]*)")
   {
     // ctor
   }
@@ -742,9 +742,9 @@ void FBI::parseVariants(const String &s,Vector<Variant> &variants)
   for(int i=0 ; i<numFields ; ++i) {
     if(!variantRegex.match(fields[i])) throw "Can't parse variant "+fields[i];
     String id=variantRegex[1], chr=variantRegex[2];
-    int pos=variantRegex[3].asInt();
-    String ref=variantRegex[4], alt=variantRegex[5];
-    Variant v(id,chr,pos);
+    int refPos=variantRegex[3].asInt(), altPos=variantRegex[4].asInt();
+    String ref=variantRegex[5], alt=variantRegex[6];
+    Variant v(id,chr,refPos,altPos,i);
     v.addAllele(ref); v.addAllele(alt);
     variants.push_back(v);
   }

@@ -48,7 +48,8 @@ struct Region { // A chromosome or gene or other genomic interval
 	 const String &seq) : id(id), chr(chr), begin(begin), end(end), 
 			      strand(strand), seq(seq) {}
   bool contains(const Variant &v) const 
-    { return v.chr==chr && v.pos>=begin && v.pos+v.alleles[0].getLength()<=end; }
+    { return v.chr==chr && v.refPos>=begin && v.refPos
+	+v.alleles[0].getLength()<=end; }
   void loadSeq(const String &twoBitToFa,const String &genomeFile,
 	       const String &tempFile);
   void clearSeq() { seq=""; }
@@ -60,9 +61,9 @@ ostream &operator<<(ostream &os,const Region &r) { r.printOn(os); return os; }
 
 
 bool operator<(const Variant &v,const Region &r)
-{ return v.pos<r.begin; }
+{ return v.refPos<r.begin; }
 bool operator>(const Variant &v,const Region &r)
-{ return v.pos>r.end; }
+{ return v.refPos>r.end; }
 
 
 
@@ -299,7 +300,7 @@ void Application::parseHeader(const String &line)
       throw String("Abort: ")+String(pos)+"<="+prevPos[chr]+
 	": input file is not sorted: use vcf-sort and re-convert to tvf";
     prevPos[chr]=pos;
-    Variant variant(id,chr,pos,i);
+    Variant variant(id,chr,pos,0,i);
     for(int j=3 ; j<fields.size() ; ++j) variant.addAllele(fields[j]);
     variant.trim();
     variants.push_back(variant);
@@ -309,7 +310,7 @@ void Application::parseHeader(const String &line)
   for(Vector<Variant>::iterator vcur=variants.begin(), 
 	vend=variants.end() ; vcur!=vend ; ++vcur) {
     const Variant &v=*vcur;
-    const int pos=v.pos;
+    const int pos=v.refPos;
     if(!regionsByChr.isDefined(v.chr)) continue;
     Vector<Region*> &rs=regionsByChr[v.chr];
     const int N=rs.size();
@@ -419,7 +420,7 @@ void Application::transitiveClosure(const Vector<Variant> &variants,int &v,
     const Variant &variant=variants[v];
     const int state=loci[variant.i].alleles[ploid];
     if(state==0) continue; // same as ref, nothing to do
-    if(end>0 && variant.pos>=end) break;
+    if(end>0 && variant.refPos>=end) break;
     const int refAlleleEnd=variant.refEnd();
     if(refAlleleEnd>end) end=refAlleleEnd;
     closure.push_back(&variant);
@@ -494,16 +495,13 @@ const Variant *Application::disambiguateOverlaps(int &v,const int numVariants,
       const Variant &variant=**cur;
       String ref=variant.alleles[0];
       int refLen=ref.length();
-      const int altPos=variant.pos-regionBegin-delta;
+      const int altPos=variant.refPos-regionBegin-delta;
       if(altPos+refLen>altGenomeLen)
 	{ refLen=altGenomeLen-altPos; ref=ref.substring(0,refLen); }
       String genomic=altGenome.substring(altPos,refLen);
       if(ref!=genomic) {
-	/*throw String("Abort: VCF_ERROR\tSEQUENCE_MISMATCH\t")+indiv
-	  +"\t"+regionID+"\t"+variant.id+":"+variant.chr+":"+variant.pos
-	  +"\t"+ref+"!="+genomic;*/
 	cerr<<"VCF_ERROR\tSEQUENCE_MISMATCH\t"<<indiv<<"\t"<<regionID
-	    <<"\t"<<variant.id<<":"<<variant.chr<<":"<<variant.pos
+	    <<"\t"<<variant.id<<":"<<variant.chr<<":"<<variant.refPos
 	    <<"\t"<<ref<<"!="<<genomic<<endl;
 	refMismatch=true;
 	return NULL;
@@ -574,7 +572,7 @@ const Variant *Application::disambiguateOverlaps(int &v,const int numVariants,
 	    end=closure.end() ; cur!=end ; ++cur) {
 	const Variant &other=**cur;
 	if(&other==&variant) continue;
-	if(variant.pos==other.pos) {
+	if(variant.refPos==other.refPos) {
 	  const int otherState=loci[other.i].alleles[ploid];
 	  // Insertion overlapping another insertion:
 	  if(other.insertion(otherState)) {

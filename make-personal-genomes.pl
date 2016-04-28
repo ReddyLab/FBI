@@ -138,7 +138,6 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
       ($1,$2,$3,$4,$5,$6);
     if($keepIDs{$indivID}) {
       my $file=$fastaFiles{$indivID}->[$alleleNum-1];
-      print "allele=$alleleNum\n";
       my $key="$indivID $geneID";
       my $numWarn=0+$warnings{$key};
       my $numErr=0+$errors{$key};
@@ -161,7 +160,7 @@ close(GFF);
 
 if(!$DEBUG) {
   unlink($refGeneFasta);
-#  unlink($altGeneFasta);
+  unlink($altGeneFasta);
   unlink($tempBedFile);
   unlink($geneVcfFile);
   unlink($geneTvfFile);
