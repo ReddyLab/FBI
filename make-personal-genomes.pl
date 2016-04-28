@@ -125,8 +125,8 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   my (%warnings,%errors);
   loadErrors($errFile,\%warnings,\%errors);
   system("cat $errFile >> $outDir/errors.txt");
-  die unless -e $altGeneFasta;
   next if $DRY_RUN;
+  die unless -e $altGeneFasta;
   die if -z $altGeneFasta;
   my $fastaReader=new FastaReader($altGeneFasta);
   while(1) {

@@ -187,7 +187,7 @@ int Application::main(int argc,char *argv[])
   File *tvf=gzRegex.search(tvfFilename) ? new GunzipPipe(tvfFilename)
     : new File(tvfFilename);
   ofstream *os=DRY_RUN ? NULL : new ofstream(fastaFilename.c_str());
-  convert(*tvf,*os,genomeFile);
+  convert(*tvf,os,genomeFile);
   delete tvf;
   delete os;
 
