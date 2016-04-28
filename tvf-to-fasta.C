@@ -704,7 +704,7 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
 
       // Write into FASTA file
       String def=String(">")+individualID+"_"+ploid+" /individual="+
-	individualID+" /allele="+ploid+" /locus="+region.id+" /coord="+
+	individualID+" /allele="+(ploid+1)+" /locus="+region.id+" /coord="+
 	region.chr+":"+region.begin+"-"+region.end+":"+
 	region.strand+" /cigar="+cigar+" /variants="+deflineVariants;
       if(os) writer.addToFasta(def,seq,*os);
