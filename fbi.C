@@ -84,7 +84,7 @@ private:
   float alignProteins(const String &refStr,const String &altStr,int &matches);
   void percentMatch(int matches,int refLen,int altLen,
 		    Essex::CompositeNode *parent);
-  void parseVariants(const String &,Vector<Variant> &);
+  void parseVariants(const String &,Vector<Variant> &,int substrateLen);
   Essex::CompositeNode *makeEssexVariants();
 };
 
@@ -599,6 +599,7 @@ String FBI::loadSeq(const String &filename,String &CIGAR)
   String seq, remainder;
   if(!reader.nextSequence(altDefline,seq)) 
     throw filename+" : cannot read file";
+  const int L=seq.length();
   FastaReader::parseDefline(altDefline,substrate,remainder);
   if(warningsRegex.search(remainder)) VCFwarnings=warningsRegex[1];
   if(errorsRegex.search(remainder)) VCFerrors=errorsRegex[1];
@@ -607,7 +608,7 @@ String FBI::loadSeq(const String &filename,String &CIGAR)
   if(!attr.isDefined("cigar")) 
     throw String("No CIGAR string found on defline: ")+altDefline;
   CIGAR=attr["cigar"];
-  parseVariants(attr["variants"],variants);
+  parseVariants(attr["variants"],variants,L);
   return seq;
 }
 
@@ -734,7 +735,7 @@ void FBI::percentMatch(int matches,int refLen,int altLen,
 
 
 
-void FBI::parseVariants(const String &s,Vector<Variant> &variants)
+void FBI::parseVariants(const String &s,Vector<Variant> &variants,int L)
 {
   Vector<String> fields;
   s.getFields(fields,",");
@@ -743,6 +744,10 @@ void FBI::parseVariants(const String &s,Vector<Variant> &variants)
     if(!variantRegex.match(fields[i])) throw "Can't parse variant "+fields[i];
     String id=variantRegex[1], chr=variantRegex[2];
     int refPos=variantRegex[3].asInt(), altPos=variantRegex[4].asInt();
+    if(reverseCigar) {
+      refPos=L-refPos-1;
+      altPos=L-altPos-1;
+    }
     String ref=variantRegex[5], alt=variantRegex[6];
     Variant v(id,chr,refPos,altPos,i);
     v.addAllele(ref); v.addAllele(alt);

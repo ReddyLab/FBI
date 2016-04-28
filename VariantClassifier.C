@@ -9,9 +9,52 @@
 using namespace std;
 using namespace BOOM;
 
-VariantClassifier::VariantClassifier()
+
+
+VariantClassifier::VariantClassifier(const Vector<Variant> &variants,
+				     RefAlt refAlt,
+				     const GffTranscript &transcript)
 {
-  // ctor
+  classify(variants,refAlt,transcript);
 }
+
+
+
+const Vector<VariantInfo> &VariantClassifier::getCDSvariants() const
+{
+  return cdsVariants;
+}
+
+
+
+const Vector<VariantInfo> &VariantClassifier::getSpliceSiteVariants() const
+{
+  return spliceSiteVariants;
+}
+
+
+
+const Vector<VariantInfo> &VariantClassifier::getNearSpliceVariants() const
+{
+  return nearSpliceVariants;
+}
+
+
+
+const Vector<VariantInfo> &VariantClassifier::getAll() const
+{
+  return alt;
+}
+
+
+
+void VariantClassifier::classify(const Vector<Variant> &variants,
+				 RefAlt refAlt,
+				 const GffTranscript &transcript)
+{
+  
+}
+
+
 
 

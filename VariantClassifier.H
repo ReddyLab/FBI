@@ -12,23 +12,23 @@
 using namespace std;
 using namespace BOOM;
 
-enum FunctionalElement {
-  FE_CDS,
-  FE_SPLICE_SITE,
-  FE_NEAR_SPLICE_SITE,
-  FE_INTRON,
-  FE_INTERGENIC
-};
 
 struct VariantInfo {
   Variant variant;
   VariantType type; // SNP/INSERTION/DELETION
   FunctionalElement elem;
+  int distanceToSpliceSite;
 };
 
 class VariantClassifier {
 public:
   enum RefAlt {REF, ALT};
+  enum FunctionalElement {
+    CDS,
+    SPLICE_SITE,
+    INTRON,
+    INTERGENIC
+  };
   VariantClassifier(const Vector<Variant> &,RefAlt,const GffTranscript &);
   const Vector<VariantInfo> &getCDSvariants() const;
   const Vector<VariantInfo> &getSpliceSiteVariants() const;
@@ -37,6 +37,7 @@ public:
 private:
   Vector<VariantInfo> cdsVaiants, spliceSiteVariants, nearSpliceVariants;
   Vector<VariantInfo> all;
+  void classify(const Vector<Variant> &,RefAlt,const GffTranscript &);
 };
 
 #endif
