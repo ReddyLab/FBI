@@ -169,7 +169,6 @@ TranscriptSignals *ProjectionChecker::findBrokenSpliceSites()
 	signal.broken=broken; signal.weakened=weakened;
 	signal.seq=weakened ? window : consensus;
 	signal.refScore=refScore; signal.cutoff=cutoff;
-	cout<<"YYY "<<cutoff<<endl;
       }
       else signals->addSignal(TES,altEnd,0.0);
     }

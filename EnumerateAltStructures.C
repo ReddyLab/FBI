@@ -124,6 +124,7 @@ void EnumerateAltStructures::findSites(SignalType type,int begin,int end,
       signal.seq+=genome.substring(pos+consensusOffset,2)+"_";
       signal.seq+=genome.substring(pos+consensusOffset+2,
 			       contextWindowLen-consensusOffset-2);
+      signal.cutoff=sensor->getCutoff();
       into.push_back(signal);
     }
   }
