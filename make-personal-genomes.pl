@@ -161,7 +161,7 @@ close(GFF);
 
 if(!$DEBUG) {
   unlink($refGeneFasta);
-  unlink($altGeneFasta);
+#  unlink($altGeneFasta);
   unlink($tempBedFile);
   unlink($geneVcfFile);
   unlink($geneTvfFile);
