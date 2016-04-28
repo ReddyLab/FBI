@@ -33,6 +33,24 @@ AlternativeStructure::~AlternativeStructure()
 
 
 
+void AlternativeStructure::reportCrypticSites(Essex::CompositeNode *parent)
+{
+  for(Vector<TranscriptSignal>::const_iterator cur=crypticSignals.begin(),
+	end=crypticSignals.end() ; cur!=end ; ++cur) {
+    const TranscriptSignal &signal=*cur;
+    Essex::CompositeNode *node=new Essex::CompositeNode("cryptic-site");
+    String typeString=signal.getType()==GT ? "donor" : "acceptor";
+    node->append(typeString);
+    node->append(signal.getPos());
+    node->append(signal.seq);
+    node->append(signal.score);
+    parent->append(node);
+  }
+  
+}
+
+
+
 
 /****************************************************************
                      EnumerateAltStructures
@@ -205,7 +223,6 @@ void EnumerateAltStructures::addIfUnique(TranscriptSignals signals)
   if(signals.anyCryptic()) signals.getChange().crypticSite=true;
   Essex::CompositeNode *msg=NULL;
   GffTranscript *transcript=signals.toTranscript(genome,sensors,msg);
-  //transcript->toGff(cout);cout<<endl;
   for(Vector<AlternativeStructure*>::iterator cur=altStructures.begin(), 
 	end=altStructures.end() ; cur!=end ; ++cur) {
     const AlternativeStructure &other=**cur;
@@ -216,11 +233,14 @@ void EnumerateAltStructures::addIfUnique(TranscriptSignals signals)
   }
   int ejcDistance;
   ProteinFate fate=nmd.predict(*transcript,genome,ejcDistance);
-  //cout<<fate<<endl;
   AlternativeStructure *structure=new AlternativeStructure(transcript,fate);
   structure->msg=msg;
   structure->ejcDistance=ejcDistance;
   structure->structureChange=signals.getChange();
+  if(signals.anyCryptic())
+    for(int i=0 ; i<signals.numSignals() ; ++i)
+      if(signals[i].cryptic) 
+	structure->crypticSignals.push_back(signals[i]);
   altStructures.push_back(structure);
 }
 

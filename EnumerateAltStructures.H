@@ -10,6 +10,7 @@
 #include "BOOM/GffTranscript.H"
 #include "BOOM/Vector.H"
 #include "BOOM/Sequence.H"
+#include "BOOM/Essex.H"
 #include "NMD.H"
 #include "TranscriptSignals.H"
 #include "Isochore.H"
@@ -27,8 +28,10 @@ struct AlternativeStructure {
   int ejcDistance;
   StructureChange structureChange;
   Essex::CompositeNode *msg;
+  Vector<TranscriptSignal> crypticSignals;
   AlternativeStructure(GffTranscript *,ProteinFate);
   ~AlternativeStructure();
+  void reportCrypticSites(Essex::CompositeNode *);
 };
 
 

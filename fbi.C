@@ -276,6 +276,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 	  s.transcript->loadSequence(altSeqStr);
 	  s.transcript->computePhases();
 	  Essex::CompositeNode *node=s.transcript->toEssex();
+	  s.reportCrypticSites(node);
 	  if(s.structureChange.anyChange()) {
 	    Essex::CompositeNode *changeNode=
 	      new Essex::CompositeNode("structure-change");
