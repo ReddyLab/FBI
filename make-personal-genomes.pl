@@ -137,7 +137,8 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
     my ($indivID,$alleleNum,$geneID,$coord,$cigar,$variants)=
       ($1,$2,$3,$4,$5,$6);
     if($keepIDs{$indivID}) {
-      my $file=$fastaFiles{$indivID}->[$alleleNum];
+      my $file=$fastaFiles{$indivID}->[$alleleNum-1];
+      print "allele=$alleleNum\n";
       my $key="$indivID $geneID";
       my $numWarn=0+$warnings{$key};
       my $numErr=0+$errors{$key};
