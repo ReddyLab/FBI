@@ -169,6 +169,7 @@ TranscriptSignals *ProjectionChecker::findBrokenSpliceSites()
 	signal.broken=broken; signal.weakened=weakened;
 	signal.seq=weakened ? window : consensus;
 	signal.refScore=refScore; signal.cutoff=cutoff;
+	cout<<"YYY "<<cutoff<<endl;
       }
       else signals->addSignal(TES,altEnd,0.0);
     }
@@ -252,7 +253,6 @@ bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
   refScore=scoreDonor(refExon,refSubstrate,refSeq);
   altScore=scoreDonor(altExon,altSubstrate,altSeq);
   cutoff=sensors.donorSensor->getCutoff();
-  cout<<"XXX "<<cutoff<<endl;
   int refPos, pos;
   const String refDonor=getDonor(refExon,refSubstrate,refPos);
   altDonor=getDonor(altExon,altSubstrate,pos);
