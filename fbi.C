@@ -758,7 +758,8 @@ Essex::CompositeNode *FBI::makeEssexVariants()
   const int numVariants=variants.size();
   for(int i=0 ; i<numVariants ; ++i) {
     const Variant &v=variants[i];
-    String s=v.id+":"+v.chr+":"+v.pos+":"+v.alleles[0]+":"+v.alleles[1];
+    String s=v.id+":"+v.chr+":"+v.refPos+":"+v.altPos+":"+v.alleles[0]
+      +":"+v.alleles[1];
     parent->append(s);
   }
   return parent;
