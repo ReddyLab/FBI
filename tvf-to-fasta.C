@@ -685,8 +685,8 @@ void Application::emit(const String &individualID,const Vector<Genotype> &loci,
 
 	// Add to the defline
 	if(!deflineVariants.empty()) deflineVariants+=",";
-	deflineVariants+=variant->id+":"+variant->chr+":"+(localPos-deltas)
-	  +":"+refAllele+":"+altAllele;
+	deflineVariants+=variant->id+":"+variant->chr+":"+localPos
+	  +":"+(localPos-deltas)+":"+refAllele+":"+altAllele;
 
 	// Update the delta (difference in coordinates btwn ref/alt)
 	const int delta=refLen-altLen;
