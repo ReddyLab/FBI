@@ -157,7 +157,8 @@ TranscriptSignals *ProjectionChecker::findBrokenSpliceSites()
 				   refScore,altScore,cutoff);
 	TranscriptSignal &signal=signals->addSignal(AG,altBegin-2,altScore);
 	signal.broken=broken; signal.weakened=weakened;
-	signal.seq=weakened ? window : consensus;
+	//signal.seq=weakened ? window : consensus;
+	signal.seq=window;
 	signal.refScore=refScore; signal.cutoff=cutoff;
       }
       if(i<numExons-1) {
@@ -167,7 +168,8 @@ TranscriptSignals *ProjectionChecker::findBrokenSpliceSites()
 				refScore,altScore,cutoff);
 	TranscriptSignal &signal=signals->addSignal(GT,altEnd,altScore);
 	signal.broken=broken; signal.weakened=weakened;
-	signal.seq=weakened ? window : consensus;
+	//signal.seq=weakened ? window : consensus;
+	signal.seq=window;
 	signal.refScore=refScore; signal.cutoff=cutoff;
       }
       else signals->addSignal(TES,altEnd,0.0);
@@ -264,11 +266,12 @@ bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
     const offset=sensors.donorSensor->getConsensusOffset();
     const int altBegin=altExon.getEnd()-offset;
     const int refBegin=refExon.getEnd()-offset;
-    altWindow=
+    /*altWindow=
       getParsedWindow(*sensors.donorSensor,refBegin,refSubstrate)
       + " " + refScore + " "
       + getParsedWindow(*sensors.donorSensor,altBegin,altSubstrate)
-      + " " + altScore;
+      + " " + altScore;*/
+    altWindow=getParsedWindow(*sensors.donorSensor,altBegin,altSubstrate);
     weakened=true;
     //return false;
   }

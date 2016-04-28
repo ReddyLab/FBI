@@ -421,9 +421,11 @@ void FBI::appendBrokenSignals(const TranscriptSignals *signals,
     else INTERNAL_ERROR;
     Essex::CompositeNode *node=new Essex::CompositeNode(tag);
     node->append(signal.getPos());
-    Vector<String> fields; signal.seq.getFields(fields);
+    /*Vector<String> fields; signal.seq.getFields(fields);
     for(Vector<String>::iterator cur=fields.begin(), end=fields.end() ; 
 	cur!=end ; ++cur) node->append(*cur);
+    */
+    node->append(signal.seq);
     node->append(signal.refScore);
     status->append(node);
   }
