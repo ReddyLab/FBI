@@ -262,7 +262,6 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
       const Vector<AlternativeStructure*> &altStructures=
 	enumerator.getAltStructures();
       const int numStruct=altStructures.size();
-      cout<<numStruct<<" structures"<<endl;
       if(numStruct>0) {
 	status->prepend("splicing-changes");
 	Essex::CompositeNode *altStructNode=
