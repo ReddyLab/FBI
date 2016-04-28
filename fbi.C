@@ -425,6 +425,7 @@ void FBI::appendBrokenSignals(const TranscriptSignals *signals,
     Vector<String> fields; signal.seq.getFields(fields);
     for(Vector<String>::iterator cur=fields.begin(), end=fields.end() ; 
 	cur!=end ; ++cur) node->append(*cur);
+    node->append(signal.refScore);
     status->append(node);
   }
 }

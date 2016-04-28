@@ -58,13 +58,15 @@ protected:
   const String &refSubstrate, &altSubstrate;
   const Labeling &labeling;
   bool checkDonor(GffExon &refExon,GffExon &altExon,bool &weakened,
-		  String &altDonor,String &altWindow);
+		  String &altDonor,String &altWindow,
+		  float &refScore,float &altScore,float &cutoff);
   bool checkAcceptor(GffExon &refExon,GffExon &altExon,bool &weakened,
-		     String &altDonor,String &altWindow);
+		     String &altDonor,String &altWindow,
+		     float &refScore,float &altScore,float &cutoff);
   bool checkDonorStrength(GffExon &refExon,const String &refSubstrate,
 		  GffExon &altExon,const String &altSubstrate);
   bool checkAcceptorStrength(GffExon &refExon,const String &refSubstrate,
-		     GffExon &altExon,const String &altSubstrate);
+			     GffExon &altExon,const String &altSubstrate);
   static bool checkDonor(GffExon &exon,const String &substrate,
 			 Essex::CompositeNode*,const SignalSensors &);
   static bool checkAcceptor(GffExon &exon,const String &substrate,

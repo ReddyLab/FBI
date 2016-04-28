@@ -22,7 +22,7 @@ using namespace BOOM;
  ****************************************************************/
 struct TranscriptSignal {
   SignalType type; // GT, AG, TSS, TES
-  float score;
+  float score, refScore, cutoff;
   int pos;
   bool broken;
   bool cryptic;

@@ -152,17 +152,23 @@ TranscriptSignals *ProjectionChecker::findBrokenSpliceSites()
       if(i==0) signals->addSignal(TSS,altBegin,0.0);
       else { // i>0
 	bool weakened; String consensus, window;
-	bool broken=!checkAcceptor(refExon,altExon,weakened,consensus,window);
-	TranscriptSignal &signal=signals->addSignal(AG,altBegin-2,0.0);
+	float refScore, altScore, cutoff;
+	bool broken=!checkAcceptor(refExon,altExon,weakened,consensus,window,
+				   refScore,altScore,cutoff);
+	TranscriptSignal &signal=signals->addSignal(AG,altBegin-2,altScore);
 	signal.broken=broken; signal.weakened=weakened;
 	signal.seq=weakened ? window : consensus;
+	signal.refScore=refScore; signal.cutoff=cutoff;
       }
       if(i<numExons-1) {
 	bool weakened; String consensus, window;
-	bool broken=!checkDonor(refExon,altExon,weakened,consensus,window);
-	TranscriptSignal &signal=signals->addSignal(GT,altEnd,0.0);
+	float refScore, altScore, cutoff;
+	bool broken=!checkDonor(refExon,altExon,weakened,consensus,window,
+				refScore,altScore,cutoff);
+	TranscriptSignal &signal=signals->addSignal(GT,altEnd,altScore);
 	signal.broken=broken; signal.weakened=weakened;
 	signal.seq=weakened ? window : consensus;
+	signal.refScore=refScore; signal.cutoff=cutoff;
       }
       else signals->addSignal(TES,altEnd,0.0);
     }
@@ -192,20 +198,26 @@ bool ProjectionChecker::checkSpliceSites(bool quiet)
     GffExon &refExon=refTrans.getIthExon(i);
     GffExon &altExon=altTrans.getIthExon(i);
     bool weakened; String consensus, window;
+    float refScore, altScore, cutoff;
     if(refExon.hasDonor()) 
-      ok=checkDonor(refExon,altExon,weakened,consensus,window) && ok;
+      ok=checkDonor(refExon,altExon,weakened,consensus,window,
+		    refScore,altScore,cutoff) && ok;
     if(refExon.hasAcceptor()) 
-      ok=checkAcceptor(refExon,altExon,weakened,consensus,window) && ok;
+      ok=checkAcceptor(refExon,altExon,weakened,consensus,window,
+		       refScore,altScore,cutoff) && ok;
   }
   const int numUTR=refTrans.numUTR();
   for(int i=0 ; i<numUTR ; ++i) {
     GffExon &refExon=refTrans.getIthUTR(i);
     GffExon &altExon=altTrans.getIthUTR(i);
     bool weakened; String consensus, window;
+    float refScore, altScore, cutoff;
     if(refExon.hasDonor()) 
-      ok=checkDonor(refExon,altExon,weakened,consensus,window) && ok;
+      ok=checkDonor(refExon,altExon,weakened,consensus,window,
+		    refScore,altScore,cutoff) && ok;
     if(refExon.hasAcceptor()) 
-      ok=checkAcceptor(refExon,altExon,weakened,consensus,window) && ok;
+      ok=checkAcceptor(refExon,altExon,weakened,consensus,window,
+		       refScore,altScore,cutoff) && ok;
   }
 
   return ok;
@@ -232,18 +244,19 @@ String ProjectionChecker::getParsedWindow(SignalSensor &sensor,
 
 bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
 				   bool &weakened,String &altDonor,
-				   String &altWindow)
+				   String &altWindow,float &refScore,
+				   float &altScore,float &cutoff)
 {
   // NOTE: this function assumes forward-strand features only ###
 
+  refScore=scoreDonor(refExon,refSubstrate,refSeq);
+  altScore=scoreDonor(altExon,altSubstrate,altSeq);
+  cutoff=sensors.donorSensor->getCutoff();
   int refPos, pos;
   const String refDonor=getDonor(refExon,refSubstrate,refPos);
   altDonor=getDonor(altExon,altSubstrate,pos);
   if(altDonor!=refDonor && !sensors.donorConsensuses.isMember(altDonor))
     { weakened=false; return false; }
-  const float refScore=scoreDonor(refExon,refSubstrate,refSeq);
-  const float altScore=scoreDonor(altExon,altSubstrate,altSeq);
-  const float cutoff=sensors.donorSensor->getCutoff();
 
   // The reference must score above threshold, the alt must score below
   // threshold, and the difference must be at least a factor of 2:
@@ -266,19 +279,20 @@ bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
 
 bool ProjectionChecker::checkAcceptor(GffExon &refExon,GffExon &altExon,
 				      bool &weakened,String &altAcceptor,
-				      String &altWindow)
+				      String &altWindow,float &refScore,
+				      float &altScore,float &cutoff)
 {
   // NOTE: this function assumes forward-strand features only ###
 
+  refScore=scoreAcceptor(refExon,refSubstrate,refSeq);
+  altScore=scoreAcceptor(altExon,altSubstrate,altSeq);
+  cutoff=sensors.acceptorSensor->getCutoff();
   int refPos, pos;
   const String refAcceptor=getAcceptor(refExon,refSubstrate,refPos);
   altAcceptor=getAcceptor(altExon,altSubstrate,pos);
   if(altAcceptor!=refAcceptor && 
      !sensors.acceptorConsensuses.isMember(altAcceptor))
     { weakened=false; return false; }
-  const float refScore=scoreAcceptor(refExon,refSubstrate,refSeq);
-  const float altScore=scoreAcceptor(altExon,altSubstrate,altSeq);
-  const float cutoff=sensors.acceptorSensor->getCutoff();
   if(refScore>=cutoff && altScore<cutoff && refScore-altScore>=log(2)) { 
     const int offset=sensors.acceptorSensor->getConsensusOffset();
     const int altBegin=altExon.getBegin()-2-offset;
@@ -327,38 +341,6 @@ String ProjectionChecker::getAcceptor(GffExon &exon,const String &substrate,int 
   }
 }
 
-
-/*
-bool ProjectionChecker::detectNMD(GffTranscript &transcript,
-				  const String &substrate,
-				  bool quiet,int &largestEJCdistance)
-{
-  largestEJCdistance=-1;
-  const int numExons=transcript.getNumExons();
-  if(numExons<2) return false;
-
-THIS IS WRONG:
-
-  const int lastExonLen=transcript.getIthExon(numExons-1).length();
-  const int lastEJC=transcript.getSplicedLength()-lastExonLen;
-  CodonIterator iter(transcript,substrate);
-  Codon codon;
-  while(iter.nextCodon(codon))
-    if(codon.isStop()) {
-      const int distance=lastEJC-codon.splicedCoord;
-      if(largestEJCdistance<0 || distance>largestEJCdistance)
-	largestEJCdistance=distance;
-      if(distance>=50) {
-	if(!quiet)
-	  cout<<"NMD predicted: PTC found "<<distance<<"bp from last EJC"
-	      <<endl;
-	return true;
-      }
-      break;
-    }
-  return false;
-}
-*/
 
 
 bool ProjectionChecker::checkFrameshifts(const Labeling &labeling,
