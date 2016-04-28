@@ -252,6 +252,7 @@ bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
   refScore=scoreDonor(refExon,refSubstrate,refSeq);
   altScore=scoreDonor(altExon,altSubstrate,altSeq);
   cutoff=sensors.donorSensor->getCutoff();
+  cout<<"XXX "<<cutoff<<endl;
   int refPos, pos;
   const String refDonor=getDonor(refExon,refSubstrate,refPos);
   altDonor=getDonor(altExon,altSubstrate,pos);
