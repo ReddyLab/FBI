@@ -45,6 +45,7 @@ void AlternativeStructure::reportCrypticSites(Essex::CompositeNode *parent)
     node->append(signal.seq);
     node->append(signal.score);
     node->append(signal.cutoff);
+    cout<<"a "<<signal.cutoff<<endl;
     parent->append(node);
   }  
 }
@@ -247,7 +248,7 @@ void EnumerateAltStructures::addIfUnique(TranscriptSignals signals)
     for(int i=0 ; i<signals.numSignals() ; ++i)
       if(signals[i].cryptic)  {
 	structure->crypticSignals.push_back(signals[i]);
-	cout<<structure->crypticSignals.back().cutoff<<endl;
+	//cout<<structure->crypticSignals.back().cutoff<<endl;
       }
   altStructures.push_back(structure);
 }
