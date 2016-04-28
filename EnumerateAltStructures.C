@@ -121,10 +121,10 @@ void EnumerateAltStructures::findSites(SignalType type,int begin,int end,
       TranscriptSignal signal(type,pos+consensusOffset,score);
       signal.setCryptic();
       //signal.seq=genome.substring(pos,contextWindowLen);
-      signal.seq=genome.substring(pos,consensusOffset)+"_";
+      signal.seq=genome.substring(pos,consensusOffset).tolower()+"_";
       signal.seq+=genome.substring(pos+consensusOffset,2)+"_";
       signal.seq+=genome.substring(pos+consensusOffset+2,
-			       contextWindowLen-consensusOffset-2);
+			   contextWindowLen-consensusOffset-2).tolower();
       signal.cutoff=sensor->getCutoff();
       into.push_back(signal);
     }
