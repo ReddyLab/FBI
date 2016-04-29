@@ -113,7 +113,7 @@ void VariantClassifier::classify(const Vector<Variant> &variants,
 	  transcript.getUTRend() ; cur!=end ; ++cur) {
       const GffExon *exon=*cur;
       if(exon->overlaps(variantInterval))
-	{ info.elem=CDS; all.push_back(info); continue; }
+	{ info.elem=UTR; all.push_back(info); continue; }
     }
   }
 
@@ -183,6 +183,10 @@ void VariantClassifier::addVariants(const Vector<VariantInfo> &variants,
   }  
   parent->append(node);
 }
+
+
+
+
 
 
 
