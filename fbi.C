@@ -27,6 +27,7 @@
 #include "StartCodonFinder.H"
 #include "NMD.H"
 #include "Variant.H"
+#include "VariantClassifier.H"
 using namespace std;
 using namespace BOOM;
 
@@ -187,6 +188,8 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   refTrans->computePhases();
   Essex::CompositeNode *refTransEssex=refTrans->toEssex();
   refTransEssex->getTag()="reference-transcript";
+  VariantClassifier classifier(variants,VariantClassifier::REF,*refTrans);
+  refTransEssex->append(classifier.makeVariantsNode());
   root->append(refTransEssex);
   Essex::CompositeNode *status=new Essex::CompositeNode("status");
   root->appendChild(status);

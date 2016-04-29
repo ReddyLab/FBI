@@ -9,6 +9,7 @@
 #include <iostream>
 #include "BOOM/Vector.H"
 #include "BOOM/GffTranscript.H"
+#include "BOOM/Essex.H"
 #include "Variant.H"
 using namespace std;
 using namespace BOOM;
@@ -36,11 +37,18 @@ public:
   const Vector<VariantInfo> &getSpliceSiteVariants() const;
   const Vector<VariantInfo> &getNearSpliceVariants() const;
   const Vector<VariantInfo> &getAll() const;
+  const Vector<VariantInfo> &getUTRvariants() const;
+  const Vector<VariantInfo> &getIntronVariants() const;
+  Essex::CompositeNode *makeVariantsNode() const;
+  void setClosenessThreshold(int); // for near-splice-site variants
 private:
+  int CLOSENESS_THRESHOLD;
   Vector<VariantInfo> cdsVariants, spliceSiteVariants, nearSpliceVariants;
-  Vector<VariantInfo> all;
+  Vector<VariantInfo> all, utrVariants, intronVariants;
   void classify(const Vector<Variant> &,RefAlt,const GffTranscript &);
   VariantType getVariantType(const Variant &) const;
+  void addVariants(const Vector<VariantInfo> &,const String &tag,
+		   Essex::CompositeNode *parent) const;
 };
 
 #endif
