@@ -242,6 +242,8 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
     altTrans->computePhases();
     Essex::CompositeNode *altTransEssex=altTrans->toEssex();
     altTransEssex->getTag()="mapped-transcript";
+    VariantClassifier classifier(variants,VariantClassifier::ALT,*altTrans);
+    altTransEssex->append(classifier.makeVariantsNode());
     root->append(altTransEssex);
     ProjectionChecker checker(*refTrans,*altTrans,refSeqStr,refSeq,
 			      altSeqStr,altSeq,projectedLab,sensors);
@@ -278,6 +280,9 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 	  s.transcript->loadSequence(altSeqStr);
 	  s.transcript->computePhases();
 	  Essex::CompositeNode *node=s.transcript->toEssex();
+	  VariantClassifier classifier(variants,VariantClassifier::ALT,
+				       *s.transcript);
+	  node->append(classifier.makeVariantsNode());
 	  s.reportCrypticSites(node);
 	  if(s.structureChange.anyChange()) {
 	    Essex::CompositeNode *changeNode=

@@ -157,7 +157,7 @@ void VariantClassifier::setClosenessThreshold(int t)
 Essex::CompositeNode *VariantClassifier::makeVariantsNode() const
 {
   Essex::CompositeNode *parent=new Essex::CompositeNode("variants");
-  addVariants(cdsVariants,"cds-variants",parent);
+  addVariants(cdsVariants,"CDS-variants",parent);
   addVariants(spliceSiteVariants,"splice-site-variants",parent);
   addVariants(nearSpliceVariants,"near-splice-variants",parent);
   addVariants(utrVariants,"UTR-variants",parent);
@@ -171,6 +171,7 @@ void VariantClassifier::addVariants(const Vector<VariantInfo> &variants,
 				    const String &tag,
 				    Essex::CompositeNode *parent) const
 {
+  if(variants.empty()) return;
   Essex::CompositeNode *node=new Essex::CompositeNode(tag);
   for(Vector<VariantInfo>::const_iterator cur=variants.begin(), 
 	end=variants.end() ; cur!=end ; ++cur) {
