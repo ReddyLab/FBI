@@ -44,6 +44,7 @@ void AlternativeStructure::reportCrypticSites(Essex::CompositeNode *parent)
     node->append(signal.getPos());
     node->append(signal.seq);
     node->append(signal.score);
+    node->append("threshold:");
     node->append(signal.cutoff);
     cout<<"a "<<signal.cutoff<<endl;
     parent->append(node);
