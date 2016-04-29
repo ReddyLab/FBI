@@ -426,6 +426,10 @@ void FBI::appendBrokenSignals(const TranscriptSignals *signals,
 	cur!=end ; ++cur) node->append(*cur);
     //node->append(signal.seq);
     //node->append(signal.refScore);
+    Essex::CompositeNode *cutoffNode=new Essex::CompositeNode("threshold");
+    SignalSensor *sensor=sensors.findSensor(type);
+    cutoffNode->append(float(sensor->getCutoff()));
+    node->append(cutoffNode);
     status->append(node);
   }
 }

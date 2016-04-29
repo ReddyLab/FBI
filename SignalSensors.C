@@ -42,3 +42,16 @@ void SignalSensors::setConsensuses(SignalSensor *sensor,
 
 
 
+SignalSensor *SignalSensors::findSensor(SignalType type)
+{
+  switch(type) {
+  case ATG: return startCodonSensor;
+  case TAG: return stopCodonSensor;
+  case GT:  return donorSensor;
+  case AG:  return acceptorSensor;
+  }
+  INTERNAL_ERROR;
+}
+
+
+

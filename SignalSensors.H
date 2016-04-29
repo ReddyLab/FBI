@@ -26,6 +26,7 @@ struct SignalSensors {
   Set<String> stopCodons;
   SignalSensors();
   void setConsensuses();
+  SignalSensor *findSensor(SignalType);
 private:
   void setConsensuses(SignalSensor *,const Set<String> &consensuses);
 };
