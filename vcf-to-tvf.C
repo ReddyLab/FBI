@@ -262,6 +262,7 @@ void Application::output(File &out)
     out.print(indiv.id+"\t");
     
     const int numVariants=indiv.genotypes.size();
+    if(numVariants<1) throw "No variants for individual: check CHROM line in Y chromosome VCF file";
     for(int i=0 ; i<numVariants ; ++i) {
       out.print(indiv.genotypes[i]);
       out.print(i+1<numVariants ? "\t" : "\n");
