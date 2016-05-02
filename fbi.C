@@ -763,10 +763,10 @@ void FBI::parseVariants(const String &s,Vector<Variant> &variants,int L)
     if(!variantRegex.match(fields[i])) throw "Can't parse variant "+fields[i];
     String id=variantRegex[1], chr=variantRegex[2];
     int refPos=variantRegex[3].asInt(), altPos=variantRegex[4].asInt();
-    if(reverseStrand) {
+    /*if(reverseStrand) {
       refPos=L-refPos-1;
       altPos=L-altPos-1;
-    }
+      }*/
     String ref=variantRegex[5], alt=variantRegex[6];
     Variant v(id,chr,refPos,altPos,i);
     v.addAllele(ref); v.addAllele(alt);
