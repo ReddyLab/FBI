@@ -46,16 +46,17 @@ private:
   FastaWriter fastaWriter;
   SignalSensors sensors;
   String labelingFile;
-  String substrate, altDefline, xmlFilename;
+  String substrate, altDefline, xmlFilename, globalCoord;
   int MAX_SPLICE_SHIFT, MIN_EXON_LEN, MIN_INTRON_LEN, NMD_DISTANCE_PARM;
   bool allowExonSkipping, allowIntronRetention, allowCrypticSites;
-  bool reverseCigar, quiet;
+  bool reverseStrand, quiet;
   String CIGAR;
   Essex::CompositeNode *root;
   Essex::Node *startCodonMsg;
   Vector<Variant> variants;
-  Regex warningsRegex, errorsRegex, variantRegex;
+  Regex warningsRegex, errorsRegex, variantRegex, coordRegex;
   int VCFwarnings, VCFerrors;
+  int refSeqLen, altSeqLen;
   float openPenalty, extendPenalty;
   int bandwidth;
   SubstitutionMatrix<float> *substMatrix; // protein matrix
@@ -122,7 +123,8 @@ int main(int argc,char *argv[])
 FBI::FBI()
   : warningsRegex("/warnings=(\\d+)"), errorsRegex("/errors=(\\d+)"), 
     VCFwarnings(0), VCFerrors(0), startCodonMsg(NULL), substMatrix(NULL),
-    variantRegex("(\\S+):(\\S+):(\\d+):(\\d+):([^:]*):([^:]*)")
+    variantRegex("(\\S+):(\\S+):(\\d+):(\\d+):([^:]*):([^:]*)"),
+    coordRegex("/coord=(\\S+)")
   {
     // ctor
   }
@@ -160,14 +162,14 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   alphabet=DnaAlphabet::global();
   if(cmd.option('l')) labelingFile=cmd.optParm('l');
   if(cmd.option('x')) xmlFilename=cmd.optParm('x');
-  reverseCigar=cmd.option('c');
+  reverseStrand=cmd.option('c');
   quiet=cmd.option('q');
 
   // Read some data from files
   processConfig(configFile);
   String refSeqStr=loadSeq(refFasta), altSeqStr=loadSeq(altFasta,CIGAR);
   const Sequence refSeq(refSeqStr,alphabet), altSeq(altSeqStr,alphabet);
-  int refSeqLen=refSeqStr.length(), altSeqLen=altSeqStr.length();
+  refSeqLen=refSeqStr.length(), altSeqLen=altSeqStr.length();
   GffTranscript *refTrans=loadGff(refGffFile);
   refTrans->loadSequence(refSeqStr);
   String refProtein=refTrans->getProtein();
@@ -177,6 +179,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   String geneID=refTrans->getGeneId();
   root=new Essex::CompositeNode("report");
   append(root,"substrate",substrate);
+  if(!globalCoord.empty()) append(root,"global-coords",globalCoord);
   append(root,"transcript-ID",transcriptID);
   append(root,"gene-ID",geneID);
   append(root,"vcf-warnings",VCFwarnings);
@@ -186,6 +189,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   Essex::CompositeNode *essexVariants=makeEssexVariants();
   root->append(essexVariants);
   refTrans->computePhases();
+  if(reverseStrand) refTrans->reverseComplement(refSeqLen);
   Essex::CompositeNode *refTransEssex=refTrans->toEssex();
   refTransEssex->getTag()="reference-transcript";
   VariantClassifier classifier(variants,VariantClassifier::REF,*refTrans);
@@ -221,7 +225,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 
   // Make CIGAR alignment
   CigarString cigar(CIGAR);
-  if(reverseCigar) cigar.reverse();
+  if(reverseStrand) cigar.reverse();
 
   // Project the reference GFF over to an alternate GFF
   mapTranscript(*refTrans,cigar,outGff,altSeqStr,altSeq);
@@ -240,6 +244,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
     GffTranscript *altTrans=loadGff(outGff);
     altTrans->loadSequence(altSeqStr);
     altTrans->computePhases();
+    if(reverseStrand) altTrans->reverseComplement(altSeqLen);
     Essex::CompositeNode *altTransEssex=altTrans->toEssex();
     altTransEssex->getTag()="mapped-transcript";
     VariantClassifier classifier(variants,VariantClassifier::ALT,*altTrans);
@@ -279,6 +284,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 	  Essex::CompositeNode *msg=s.msg;
 	  s.transcript->loadSequence(altSeqStr);
 	  s.transcript->computePhases();
+	  if(reverseStrand) s.transcript->reverseComplement(altSeqLen);
 	  Essex::CompositeNode *node=s.transcript->toEssex();
 	  VariantClassifier classifier(variants,VariantClassifier::ALT,
 				       *s.transcript);
@@ -615,6 +621,7 @@ String FBI::loadSeq(const String &filename,String &CIGAR)
   FastaReader::parseDefline(altDefline,substrate,remainder);
   if(warningsRegex.search(remainder)) VCFwarnings=warningsRegex[1];
   if(errorsRegex.search(remainder)) VCFerrors=errorsRegex[1];
+  if(coordRegex.search(remainder)) globalCoord=coordRegex[1];
   Map<String,String> attr;
   FastaReader::parseAttributes(remainder,attr);
   if(!attr.isDefined("cigar")) 
@@ -756,7 +763,7 @@ void FBI::parseVariants(const String &s,Vector<Variant> &variants,int L)
     if(!variantRegex.match(fields[i])) throw "Can't parse variant "+fields[i];
     String id=variantRegex[1], chr=variantRegex[2];
     int refPos=variantRegex[3].asInt(), altPos=variantRegex[4].asInt();
-    if(reverseCigar) {
+    if(reverseStrand) {
       refPos=L-refPos-1;
       altPos=L-altPos-1;
     }

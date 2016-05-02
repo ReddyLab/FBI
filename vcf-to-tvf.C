@@ -1,6 +1,6 @@
 /****************************************************************
  vcf-to-tvf.C
- Copyright (C)2015 William H. Majoros (martiandna@gmail.com).
+ Copyright (C)2016 William H. Majoros (martiandna@gmail.com).
  This is OPEN SOURCE SOFTWARE governed by the Gnu General Public
  License (GPL) version 3, as described at www.opensource.org.
  ****************************************************************/
@@ -63,22 +63,22 @@ protected:
   bool quiet;
   bool filterByIndiv; // user wants only specific individuals
   Set<String> keepIndiv;
+  Set<String> males;
+  int numIndividuals;
+  bool knowMales;
   void loadIndivList(const String &filename);
   void loadRegions(const String &filename);
   void convert(File &infile,File &outfile);
-  //void convertSM(File &infile,File &outfile,const String &tempfile);
   void preprocess(File &infile);
   void parseChromLine(const Vector<String> &);
   bool parseVariant(const Vector<String> &fields,String &chr,int &pos,
 		    String &ref,Vector<String> &alt,String &id);
   bool parseVariant(const Vector<String> &);
-  //void parseVariantSM(const Vector<String> &fields,File &temp,
-  //		      int &variantNum,int entrySize);
   void parseVariantAndGenotypes(const Vector<String> &);
   bool keep(const String &chr,int pos);
   void output(File &outfile);
-  //void outputSM(File &temp,File &out,int entrySize);
   bool variableSite(const Vector<String> &fields);
+  void loadGender(const String &filename);
 };
 
 
@@ -101,7 +101,7 @@ int main(int argc,char *argv[])
 
 Application::Application()
   : gzipRegex(".*\\.gz"), dnaRegex("^[ACGTacgt]+$"), 
-    CNregex("^<CN(\\d+)>$")
+    CNregex("^<CN(\\d+)>$"), numIndividuals(0)
 {
   // ctor
 }
@@ -111,7 +111,7 @@ Application::Application()
 int Application::main(int argc,char *argv[])
 {
   // Process command line
-  CommandLine cmd(argc,argv,"ci:f:qsvm:");
+  CommandLine cmd(argc,argv,"ci:f:qsvm:y:");
   if(cmd.numArgs()!=2)
     throw String("\nvcf-to-tvf [options] <in.vcf> <out.tvf>\n\
    both input and output files can be zipped (use .gz as suffix)\n\
@@ -123,6 +123,9 @@ int Application::main(int argc,char *argv[])
    -v : variable sites only\n\
    -q : quiet (no warnings)\n\
    -m <tempfile> : small memory footprint (may be slow)\n\
+   -y <gender.txt> : when not all individuals are given, assume females\n\
+                     are missing (as for the Y chromosome)\n\
+                     format: name followed by gender (male/female)\n\
 ");
   const String infile=cmd.arg(0);
   const String outfile=cmd.arg(1);
@@ -131,6 +134,7 @@ int Application::main(int argc,char *argv[])
   prependChr=cmd.option('c');
   SNPsOnly=cmd.option('s');
   quiet=cmd.option('q');
+  if(cmd.option('y')) loadGender(cmd.optParm('y'));
   const bool smallmem=cmd.option('m');
   if(smallmem) throw "option -m is not currently supported";
   filterByIndiv=cmd.option('i');
@@ -220,11 +224,29 @@ void Application::parseVariantAndGenotypes(const Vector<String> &fields)
     if(genotype.findFirst('.')>=0 ||
        genotype.findFirst('/')>=0) return;
        }*/
-  for(int i=0 ; i<numIndiv ; ++i) {
-    const String &genotype=fields[i+9];
-    Individual &indiv=individuals[i];
-    indiv.genotypes.push_back(genotype);
+
+  // The usual case: a genotype is listed for all individuals
+  if(numIndiv==numIndividuals) 
+    for(int i=0 ; i<numIndiv ; ++i) {
+      const String &genotype=fields[i+9];
+      Individual &indiv=individuals[i];
+      indiv.genotypes.push_back(genotype);
+    }
+
+  // Odd case: genotypes are given only for males (dbSNP does this)
+  else if(numIndiv==males.size()) {
+    int nextMale=0;
+    for(int i=0 ; i<numIndiv ; ++i) {
+      const String &genotype=fields[i+9];
+      for( ; nextMale<numIndividuals &&
+	     !males.isMember(individuals[nextMale].id) ; ++nextMale);
+      if(nextMale>=numIndividuals) throw "too many fields in VCF file";
+      //Individual &indiv=individuals[i];
+      Individual &indiv=individuals[nextMale];
+      indiv.genotypes.push_back(genotype);
+    }
   }
+  else throw "number of fields in VCF line does not match the number of individuals";
 }
 
 
@@ -262,7 +284,6 @@ void Application::output(File &out)
     out.print(indiv.id+"\t");
     
     const int numVariants=indiv.genotypes.size();
-    if(numVariants<1) throw "No variants for individual: check CHROM line in Y chromosome VCF file";
     for(int i=0 ; i<numVariants ; ++i) {
       out.print(indiv.genotypes[i]);
       out.print(i+1<numVariants ? "\t" : "\n");
@@ -370,6 +391,26 @@ void Application::loadIndivList(const String &filename)
     line.getFields(fields);
     if(fields.size()>=1) keepIndiv.insert(fields[0]);
   }
+  numIndividuals=keepIndiv.size();
 }
 
 
+
+void Application::loadGender(const String &filename)
+{
+  knowMales=true;
+  ifstream is(filename.c_str());
+  int n=0;
+  while(!is.eof()) {
+    String line; line.getline(is);
+    line.trimWhitespace();
+    Vector<String> fields;
+    line.getFields(fields);
+    if(fields.size()==0) continue;
+    if(fields.size()!=2) 
+      throw String("Abort: ")+line+" : invalid gender specification";
+    if(fields[1]=="male") males.insert(fields[0]);
+    ++n;
+  }
+  if(numIndividuals==0) numIndividuals=n;
+}
