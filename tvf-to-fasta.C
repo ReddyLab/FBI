@@ -231,6 +231,7 @@ void Application::convert(File &tvf,ostream *os,const String genomeFile)
     line.trimWhitespace();
     if(line.isEmpty()) continue;
     Vector<String> &fields=*line.getFields();
+    if(fields.size()==1) continue;
     if(fields.size()!=numVariants+1) {
       cout<<fields.size()<<"\t"<<numVariants<<"\t"<<endl;
       if(fields.size()>0) cout<<fields[0]<<endl;

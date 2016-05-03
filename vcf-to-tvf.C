@@ -279,7 +279,8 @@ void Application::output(File &out)
 	end=individuals.end() ; cur!=end ; ++cur) {
     const Individual &indiv=*cur;
     if(!keepIndiv.isMember(indiv.id)) continue;
-    if(numVariants==0) { out.print(indiv.id+"\n"); continue; }
+    //if(numVariants==0) { out.print(indiv.id+"\n"); continue; }
+    if(indiv.genotypes.size()==0) { out.print(indiv.id+"\n"); continue; }
     out.print(indiv.id+"\t");
     
     const int numVariants=indiv.genotypes.size();
