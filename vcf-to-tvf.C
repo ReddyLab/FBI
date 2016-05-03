@@ -74,7 +74,7 @@ protected:
   bool parseVariant(const Vector<String> &fields,String &chr,int &pos,
 		    String &ref,Vector<String> &alt,String &id);
   bool parseVariant(const Vector<String> &);
-  void parseVariantAndGenotypes(const Vector<String> &);
+  void parseVariantAndGenotypes(const Vector<String> &,const String &line);
   bool keep(const String &chr,int pos);
   void output(File &outfile);
   bool variableSite(const Vector<String> &fields);
@@ -155,8 +155,6 @@ int Application::main(int argc,char *argv[])
   timer.startCounting();
   convert(*vcf,*tvf);
   vcf->close(); tvf->close();
-  //cerr<<"done."<<endl;
-  //cerr<<timer.elapsedTime()<<endl;
 
   return 0;
 }
@@ -192,7 +190,7 @@ void Application::convert(File &infile,File &outfile)
     Vector<String> &fields=*line.getFields();
     if(fields.size()>0) {
       if(fields[0]=="#CHROM") parseChromLine(fields);
-      else if(fields[0][0]!='#') parseVariantAndGenotypes(fields);
+      else if(fields[0][0]!='#') parseVariantAndGenotypes(fields,line);
     }
     delete &fields;
   }
@@ -215,7 +213,8 @@ void Application::parseChromLine(const Vector<String> &fields)
 
 
 
-void Application::parseVariantAndGenotypes(const Vector<String> &fields)
+void Application::parseVariantAndGenotypes(const Vector<String> &fields,
+					   const String &line)
 {
   if(!parseVariant(fields)) return;
   const int numIndiv=fields.size()-9;
@@ -234,19 +233,19 @@ void Application::parseVariantAndGenotypes(const Vector<String> &fields)
     }
 
   // Odd case: genotypes are given only for males (dbSNP does this)
-  else if(numIndiv==males.size()) {
+  else if(numIndiv==males.size() && males.size()>0) {
     int nextMale=0;
     for(int i=0 ; i<numIndiv ; ++i) {
       const String &genotype=fields[i+9];
       for( ; nextMale<numIndividuals &&
 	     !males.isMember(individuals[nextMale].id) ; ++nextMale);
       if(nextMale>=numIndividuals) throw "too many fields in VCF file";
-      //Individual &indiv=individuals[i];
       Individual &indiv=individuals[nextMale];
       indiv.genotypes.push_back(genotype);
+      ++nextMale;
     }
   }
-  else throw "number of fields in VCF line does not match the number of individuals";
+  else throw String("Number of fields in VCF line does not match the number of individuals: ")+line;
 }
 
 

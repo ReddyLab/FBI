@@ -31,7 +31,8 @@ struct AlternativeStructure {
   Vector<TranscriptSignal> crypticSignals;
   AlternativeStructure(GffTranscript *,ProteinFate);
   ~AlternativeStructure();
-  void reportCrypticSites(Essex::CompositeNode *);
+  void reportCrypticSites(Essex::CompositeNode *,bool reverseStrand,
+			  int substrateLen);
 };
 
 

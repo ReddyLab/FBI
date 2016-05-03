@@ -33,7 +33,8 @@ AlternativeStructure::~AlternativeStructure()
 
 
 
-void AlternativeStructure::reportCrypticSites(Essex::CompositeNode *parent)
+void AlternativeStructure::reportCrypticSites(Essex::CompositeNode *parent,
+					      bool reverseStrand,int L)
 {
   for(Vector<TranscriptSignal>::const_iterator cur=crypticSignals.begin(),
 	end=crypticSignals.end() ; cur!=end ; ++cur) {
@@ -41,7 +42,9 @@ void AlternativeStructure::reportCrypticSites(Essex::CompositeNode *parent)
     Essex::CompositeNode *node=new Essex::CompositeNode("cryptic-site");
     String typeString=signal.getType()==GT ? "donor" : "acceptor";
     node->append(typeString);
-    node->append(signal.getPos());
+    int pos=signal.getPos();
+    if(reverseStrand) pos=L-pos-1;
+    node->append(pos);
     node->append(signal.seq);
     node->append(signal.score);
     node->append("threshold:");

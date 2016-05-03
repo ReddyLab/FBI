@@ -289,7 +289,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 	  VariantClassifier classifier(variants,VariantClassifier::ALT,
 				       *s.transcript);
 	  node->append(classifier.makeVariantsNode());
-	  s.reportCrypticSites(node);
+	  s.reportCrypticSites(node,reverseStrand,altSeqLen);
 	  if(s.structureChange.anyChange()) {
 	    Essex::CompositeNode *changeNode=
 	      new Essex::CompositeNode("structure-change");
@@ -434,7 +434,9 @@ void FBI::appendBrokenSignals(const TranscriptSignals *signals,
       tag=signal.weakened ? "weakened-acceptor" : "broken-acceptor";
     else INTERNAL_ERROR;
     Essex::CompositeNode *node=new Essex::CompositeNode(tag);
-    node->append(signal.getPos());
+    int pos=signal.getPos();
+    if(reverseStrand) pos=altSeqLen-pos-1;
+    node->append(pos);
     Vector<String> fields; signal.seq.getFields(fields);
     for(Vector<String>::iterator cur=fields.begin(), end=fields.end() ; 
 	cur!=end ; ++cur) node->append(*cur);

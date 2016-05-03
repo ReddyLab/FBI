@@ -113,10 +113,10 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   my $chrVcfFile=$chrToVCF{$chr};
   writeBed3($chr,$begin,$end,$tempBedFile);
   System("$TABIX -h $chrVcfFile -R $tempBedFile > $geneVcfFile");
-  System("$FBI/vcf-to-tvf -i $IDfile $geneVcfFile $geneTvfFile");
+  my $dashY=$genderFile eq "" ? "" : "-y $genderFile";
+  System("$FBI/vcf-to-tvf $dashY -i $IDfile $geneVcfFile $geneTvfFile");
   writeBed6($chr,$begin,$end,$name,$strand,$tempBedFile);
   system("rm -f $altGeneFasta");
-  my $dashY=$genderFile eq "" ? "" : "-y $genderFile";
   my $dashD=$DRY_RUN ? "-d" : "";
   my $errFile="$outDir/err.out";
   System("$FBI/tvf-to-fasta $dashD $dashY -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $errFile");
