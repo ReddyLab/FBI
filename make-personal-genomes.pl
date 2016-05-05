@@ -17,8 +17,7 @@ make-personal-genomes.pl [-d] <fbi.config> <genes.gff> <out-dir>
 Assumptions:
  * VCF files must be zipped with bgzip and have accompanying tbi indexes
  * VCF files must contain chromosome in filename, e.g. chr14, chrX, etc.
- * In VCF files, chrom names don't begin with \"chr\", but in GFF and
-     2bit files, they do
+ * Chromosome names begin with \"chr\" in VCF and GFF files
  * Your environment variable \$FBI must point to the FBI dir
  * <out-dir> will be populated with FASTA files
 "

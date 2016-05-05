@@ -18,8 +18,7 @@ Assumptions:
  * populations.txt has two columns: individuals and populations
  * VCF files must be zipped with bgzip and have accompanying tbi indexes
  * VCF files must contain chromosome in filename, e.g. chr14, chrX, etc.
- * In VCF files, chrom names don't begin with \"chr\", but in GFF and
-     2bit files, they do
+ * Chrom names begin with \"chr\" in all VCF and GF files
  * Your environment variable \$FBI must point to the FBI dir
  * <out-dir> will be populated with FASTA files
 "
@@ -79,7 +78,7 @@ my @individuals=keys %keepIDs;
 my $numIndiv=@individuals;
 my %fastaFiles;
 for(my $i=0 ; $i<$numIndiv ; ++$i) {
-  my $indiv=$individuals->[$i];
+  my $indiv=$individuals[$i];
   next unless $keepIDs{$indiv};
   $fastaFiles{$indiv}=[];
   for(my $j=1 ; $j<=$ploidy ; ++$j) {
@@ -127,7 +126,7 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   system("rm -f $altGeneFasta");
   my $dashD=$DRY_RUN ? "-d" : "";
   my $errFile="$outDir/err.out";
-  System("$FBI/tvf-to-fasta $dashD -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $errFile");
+  System("$FBI/tvf-to-fasta2 $dashD -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $errFile");
   my $err=`cat $errFile`;
   if($err=~/error/ || $err=~/Abort/) { die $err }
   my (%warnings,%errors);
@@ -218,7 +217,6 @@ sub initChrToVCF {
     if($file=~/(chr[A-Za-z\d]+)/) {
       my $chr=$1;
       $chrToVCF{$chr}=$file;
-      print "CHROM $chr $file\n";
     }
   }
 }
@@ -234,7 +232,6 @@ sub loadChromLengths
     next unless @fields>=2;
     my ($chr,$len)=@fields;
     $chromLen{$chr}=$len;
-    print "LEN $chr $len\n";
   }
   close(IN);
 }

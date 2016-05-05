@@ -2753,6 +2753,19 @@ tvf-to-fasta: \
 	$(CC) $(LDFLAGS) -o tvf-to-fasta \
 		$(OBJ)/tvf-to-fasta.o \
 		$(LIBS)
+
+#--------------------------------------------------------
+$(OBJ)/tvf-to-fasta2.o:\
+		tvf-to-fasta.C
+	$(CC) $(CFLAGS) -o $(OBJ)/tvf-to-fasta2.o -c \
+		tvf-to-fasta.C
+#---------------------------------------------------------
+tvf-to-fasta2: \
+		$(OBJ)/tvf-to-fasta2.o
+	$(CC) $(LDFLAGS) -o tvf-to-fasta2 \
+		$(OBJ)/tvf-to-fasta2.o \
+		$(LIBS)
+
 #--------------------------------------------------------
 $(OBJ)/debug.o:\
 		debug.C

@@ -139,7 +139,7 @@ int main(int argc,char *argv[])
 
 Application::Application()
   : twoBitToFa("twoBitToFa"), gzRegex("gz$"), tempfile(TempFilename::get()),
-    PLOIDY(2), SANITY_CHECKS(true), DRY_RUN(false)
+    PLOIDY(2), SANITY_CHECKS(true), DRY_RUN(false), knowMales(false)
 {
   // ctor
   randomize();
