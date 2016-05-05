@@ -151,8 +151,10 @@ int Application::main(int argc,char *argv[])
 {
   // Process command line
   CommandLine cmd(argc,argv,"dhrt:i:c:y:p:s");
-  if(cmd.numArgs()!=4)
-    throw String("\ntvf-to-fasta [options] <in.tvf> <genome.2bit> <regions.bed> <out.fasta>\n\
+  if(cmd.numArgs()!=5)
+    throw String("\ntvf-to-fasta [options] <in.tvf> <genome.2bit> <regions.bed> <out.fasta> <sample-info.txt>\n\
+     sample-info.txt: tab-separated file:\n\
+          indiv gender subpopulation superpopulation\n\
      -d : dry run - no output, just report errors\n\
      -t path : path to twoBitToFa\n\
      -r : emit reference sequence also\n\
@@ -171,6 +173,7 @@ int Application::main(int argc,char *argv[])
   genomeFile=cmd.arg(1);
   const String &regionsFilename=cmd.arg(2);
   const String &fastaFilename=cmd.arg(3);
+  const String &sampleInfoFile=cmd.arg(4);
   if(cmd.option('t')) twoBitToFa=cmd.optParm('t');
   wantRef=cmd.option('r');
   if(cmd.option('i')) wantIndiv=cmd.optParm('i');

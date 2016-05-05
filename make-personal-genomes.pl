@@ -43,6 +43,8 @@ my $IDfile=$config->lookupOrDie("individuals");
 my $genderFile=$config->lookup("gender");
 my $vcfDir=$config->lookupOrDie("vcf");
 my $ploidy=0+$config->lookupOrDie("ploidy");
+my $vcfLacksChr=$config->lookup("vcf-lacks-chr");
+$vcfLacksChr=($vcfLacksChr eq "true");
 if($ploidy<1) { die "invalid ploidy" }
 my %chromLen;
 loadChromLengths($CHROM_LENGTHS);
@@ -96,25 +98,31 @@ for(my $j=1 ; $j<=$ploidy ; ++$j) {
 #==============================================================
 
 my $numGenes=@$genes;
+print "$numGenes genes loaded\n";
+my %skipped;
 if(!$DRY_RUN) { open(GFF,">$outGFF") || die "Can't create file $outGFF" }
 for(my $i=0 ; $i<$numGenes ; ++$i) {
   my $gene=$genes->[$i];
+  my $geneName=$gene->getId();
+  print "gene $geneName\n";
   my $chr=$gene->getSubstrate();
+  my $chrVcfFile=$chrToVCF{$chr};
+  if(!$chrVcfFile) { $skipped{$chr}=1; print "Warning: skipping $chr (no VCF)\n"; next }
   my $begin=$gene->getBegin()-$MARGIN_AROUND_GENE;
   my $end=$gene->getEnd()+$MARGIN_AROUND_GENE;
   if(!$DRY_RUN) { writeLocalGFF($gene,$begin,*GFF) }
   if($begin<0) { $begin=0 }
-  next unless defined($chromLen{$chr});
+  if(!defined($chromLen{$chr})) { $skipped{$chr}=1; print "Warning: skipping $chr (no length)\n"; next }
   if($end>$chromLen{$chr}) { $end=$chromLen{$chr} }
   my $strand=$gene->getStrand();
   my $name=$gene->getId();
   writeBed4($chr,$begin,$end,$name,$tempBedFile);
   System("$twoBitToFa -bed=$tempBedFile -noMask $twoBitFile $refGeneFasta");
-  my $chrVcfFile=$chrToVCF{$chr};
   writeBed3($chr,$begin,$end,$tempBedFile);
   System("$TABIX -h $chrVcfFile -R $tempBedFile > $geneVcfFile");
   my $dashY=$genderFile eq "" ? "" : "-y $genderFile";
-  System("$FBI/vcf-to-tvf $dashY -i $IDfile $geneVcfFile $geneTvfFile");
+  my $dashC=$vcfLacksChr ? " -c " : "";
+  System("$FBI/vcf-to-tvf $dashC $dashY -i $IDfile $geneVcfFile $geneTvfFile");
   writeBed6($chr,$begin,$end,$name,$strand,$tempBedFile);
   system("rm -f $altGeneFasta");
   my $dashD=$DRY_RUN ? "-d" : "";
@@ -153,6 +161,8 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   last if $DEBUG;
 }
 close(GFF);
+my @skipped=keys %skipped;
+foreach my $skipped (@skipped) { print "warning: skipped $skipped\n" }
 
 #==============================================================
 # Clean up
@@ -200,7 +210,8 @@ sub writeBed4 {
 # writeBed3($chr,$begin,$end,$tempBedFile);
 sub writeBed3 {
   my ($chr,$begin,$end,$outfile)=@_;
-  #if($chr=~/chr(.+)/) { $chr=$1 }
+
+  if($vcfLacksChr && $chr=~/chr(.+)/) { $chr=$1 }
   open(OUT,">$outfile") || die "Can't write file $outfile\n";
   print OUT "$chr\t$begin\t$end\n";
   close(OUT);
@@ -229,6 +240,7 @@ sub initChrToVCF {
     if($file=~/(chr[A-Za-z\d]+)/) {
       my $chr=$1;
       $chrToVCF{$chr}=$file;
+      print "CHROM $chr $file\n";
     }
   }
 }
@@ -244,6 +256,7 @@ sub loadChromLengths
     next unless @fields>=2;
     my ($chr,$len)=@fields;
     $chromLen{$chr}=$len;
+    print "LEN $chr $len\n";
   }
   close(IN);
 }

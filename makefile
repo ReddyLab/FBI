@@ -2732,6 +2732,17 @@ vcf-to-tvf: \
 		$(OBJ)/vcf-to-tvf.o \
 		$(LIBS)
 #--------------------------------------------------------
+$(OBJ)/vcf-population.o:\
+		vcf-population.C
+	$(CC) $(CFLAGS) -o $(OBJ)/vcf-population.o -c \
+		vcf-population.C
+#---------------------------------------------------------
+vcf-population: \
+		$(OBJ)/vcf-population.o
+	$(CC) $(LDFLAGS) -o vcf-population \
+		$(OBJ)/vcf-population.o \
+		$(LIBS)
+#--------------------------------------------------------
 $(OBJ)/tvf-to-fasta.o:\
 		tvf-to-fasta.C
 	$(CC) $(CFLAGS) -o $(OBJ)/tvf-to-fasta.o -c \
