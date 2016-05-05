@@ -139,6 +139,7 @@ int Application::main(int argc,char *argv[])
   if(smallmem) throw "option -m is not currently supported";
   filterByIndiv=cmd.option('i');
   if(filterByIndiv) loadIndivList(cmd.optParm('i'));
+  if(!cmd.option('y') && !cmd.option('i')) throw "-i or -y must be specified";
 
   // Load regions to filter by
   if(wantFilter) loadRegions(cmd.optParm('f'));

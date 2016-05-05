@@ -10,7 +10,7 @@ our ($opt_d);
 getopts('d');
 
 die "\n
-major-allele-genome.pl [-d] <fbi.config> <genes.gff> <out-dir> <populations.txt>
+major-allele-genome.pl [-d] <fbi.config> <genes.gff> <out-dir> <population-list.txt> <indiv-population.txt>
 
 -d = dry run: no output, just report errors
 
@@ -23,8 +23,8 @@ Assumptions:
  * Your environment variable \$FBI must point to the FBI dir
  * <out-dir> will be populated with FASTA files
 "
-  unless @ARGV==4;
-my ($configFile,$gffFile,$outDir,$populationFile)=@ARGV;
+  unless @ARGV==5;
+my ($configFile,$gffFile,$outDir,$IDfile,$populationFile)=@ARGV;
 
 #==============================================================
 # First, some initialization
@@ -40,8 +40,6 @@ my $CHROM_LENGTHS=$config->lookupOrDie("chr-lengths");
 my $TABIX=$config->lookupOrDie("tabix");
 my $twoBitFile=$config->lookupOrDie("genome");
 my $twoBitToFa=$config->lookupOrDie("twoBitToFa");
-my $IDfile=$config->lookupOrDie("individuals");
-my $genderFile=$config->lookup("gender");
 my $vcfDir=$config->lookupOrDie("vcf");
 my $ploidy=0+$config->lookupOrDie("ploidy");
 my $vcfLacksChr=$config->lookup("vcf-lacks-chr");
@@ -77,8 +75,8 @@ my $genes=$gffReader->loadGenes($gffFile);
 my %keepIDs;
 loadIDs($IDfile,\%keepIDs);
 $keepIDs{"reference"}=1;
-my $individuals=getIndividualList($vcfDir);
-my $numIndiv=@$individuals;
+my @individuals=keys %keepIDs;
+my $numIndiv=@individuals;
 my %fastaFiles;
 for(my $i=0 ; $i<$numIndiv ; ++$i) {
   my $indiv=$individuals->[$i];
@@ -123,14 +121,13 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   writeBed3($chr,$begin,$end,$tempBedFile);
   System("$TABIX -h $chrVcfFile -R $tempBedFile > $geneVcfFile");
   System("$FBI/vcf-population $geneVcfFile $populationFile $populationVCF");
-  my $dashY=$genderFile eq "" ? "" : "-y $genderFile";
   my $dashC=$vcfLacksChr ? " -c " : "";
-  System("$FBI/vcf-to-tvf $dashC $dashY -i $IDfile $populationVCF $geneTvfFile");
+  System("$FBI/vcf-to-tvf $dashC -i $IDfile $populationVCF $geneTvfFile");
   writeBed6($chr,$begin,$end,$name,$strand,$tempBedFile);
   system("rm -f $altGeneFasta");
   my $dashD=$DRY_RUN ? "-d" : "";
   my $errFile="$outDir/err.out";
-  System("$FBI/tvf-to-fasta $dashD $dashY -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $errFile");
+  System("$FBI/tvf-to-fasta $dashD -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $errFile");
   my $err=`cat $errFile`;
   if($err=~/error/ || $err=~/Abort/) { die $err }
   my (%warnings,%errors);
@@ -179,28 +176,6 @@ if(!$DEBUG) {
   unlink($geneTvfFile);
 }
 
-#==============================================================
-sub getIndividualList {
-  my ($vcfDir)=@_;
-  my @files=`ls $vcfDir/*.vcf.gz`;
-  die "no VCF files found\n" unless @files>0;
-  my $file=$files[0];
-  chomp $file;
-  my $individuals=[];
-  open(IN,"cat $file|gunzip|") || die "can't open file $file\n";
-  while(<IN>) {
-    chomp;
-    if(/^\s*#CHROM/) {
-      my @fields=split;
-      my $numFields=@fields;
-      for(my $i=9 ; $i<$numFields ; ++$i)
-	{ push @$individuals,$fields[$i] }
-      last;
-    }
-  }
-  close(IN);
-  return $individuals;
-}
 #==============================================================
 # writeBed4($chr,$begin,$end,$name,$tempBedFile);
 sub writeBed4 {
