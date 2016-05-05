@@ -126,7 +126,7 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   system("rm -f $altGeneFasta");
   my $dashD=$DRY_RUN ? "-d" : "";
   my $errFile="$outDir/err.out";
-  System("$FBI/tvf-to-fasta2 $dashD -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $errFile");
+  System("$FBI/tvf-to-fasta2 -p 1 $dashD -r $geneTvfFile $twoBitFile $tempBedFile $altGeneFasta >& $errFile");
   my $err=`cat $errFile`;
   if($err=~/error/ || $err=~/Abort/) { die $err }
   my (%warnings,%errors);

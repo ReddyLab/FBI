@@ -263,6 +263,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
     }
 
     if(signals->anyBroken()) {
+      altTransEssex->deleteChild("translation");
       appendBrokenSignals(signals,status);
       EnumerateAltStructures enumerator(*signals,altSeqStr,MAX_SPLICE_SHIFT,
 					MIN_EXON_LEN,MIN_INTRON_LEN,
