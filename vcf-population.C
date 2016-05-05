@@ -19,6 +19,18 @@ using namespace BOOM;
 
 struct Population {
   String name;
+  Vector<int> alleleCounts;
+  void increment(int allele) {
+    while(alleleCounts.size()<=allele) alleleCounts.push_back(0);
+    ++alleleCounts[allele];
+  }
+  void clearCounts() { alleleCounts.clear(); }
+  int majorAllele() {
+    int m=0;
+    for(int i=1 ; i<alleleCounts.size() ; ++i)
+      if(alleleCounts[i]>alleleCounts[m]) m=i;
+    return m;
+  }
   Population() {}
   Population(const String &n) : name(n) {}
 };
@@ -48,7 +60,6 @@ struct Variant {
 struct Individual {
   String id;
   int populationIndex;
-  Vector<String> genotypes;
 };
 
 class Application {
@@ -59,19 +70,20 @@ protected:
   Time timer;
   Vector<Population> populations;
   Vector<Individual> individuals;
+  Map<String,int> indivToPopIndex;
   Vector<Variant> variants;
   Regex gzipRegex; // *.gz
   Regex dnaRegex;
   Regex CNregex; // <CN14>
   int numIndividuals;
+  void clearCounts();
   void convert(File &infile,File &outfile);
-  void preprocess(File &infile);
-  void parseChromLine(const Vector<String> &);
+  void parseChromLine(const Vector<String> &,File &outfile);
   bool parseVariant(const Vector<String> &fields,String &chr,int &pos,
 		    String &ref,Vector<String> &alt,String &id);
-  bool parseVariant(const Vector<String> &);
-  void parseVariantAndGenotypes(const Vector<String> &,const String &line);
-  void output(File &outfile);
+  bool parseVariant(const Vector<String> &,File &outfile);
+  void parseVariantAndGenotypes(const Vector<String> &,const String &line,
+				File &outfile);
   void processPopFile(const String &filename);
 };
 
@@ -106,7 +118,7 @@ int Application::main(int argc,char *argv[])
 {
   // Process command line
   CommandLine cmd(argc,argv,"");
-  if(cmd.numArgs()!=2)
+  if(cmd.numArgs()!=3)
     throw String("\nvcf-population [options] <in.vcf> <populations.txt> <out.vcf>\n\
    both input and output files can be zipped (use .gz as suffix)\n\
 ");
@@ -115,6 +127,7 @@ int Application::main(int argc,char *argv[])
   const String outfile=cmd.arg(2);
 
   // Open files
+  processPopFile(popFile);
   File *vcfIn=gzipRegex.match(infile) ? 
     new Pipe(String("cat ")+infile+" | gunzip","r") : 
     new File(infile);
@@ -139,90 +152,67 @@ void Application::convert(File &infile,File &outfile)
     line.trimWhitespace();
     Vector<String> &fields=*line.getFields();
     if(fields.size()>0) {
-      if(fields[0]=="#CHROM") parseChromLine(fields);
-      else if(fields[0][0]!='#') parseVariantAndGenotypes(fields,line);
+      if(fields[0]=="#CHROM") parseChromLine(fields,outfile);
+      else if(fields[0][0]!='#') parseVariantAndGenotypes(fields,line,outfile);
+      else outfile.print(line+"\n");
     }
     delete &fields;
   }
-  output(outfile);
 }
 
 
 
-void Application::parseChromLine(const Vector<String> &fields)
+void Application::parseChromLine(const Vector<String> &fields,File &outfile)
 {
   // #CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  200848168@1097100704
   const int numFields=fields.size();
   if(numFields<10 || fields[8]!="FORMAT") 
     throw "Error parsing #CHROM line in VCF file";
+  for(int i=0 ; i<9 ; ++i) outfile.print(fields[i]+"\t");
+  for(int i=0 ; i<populations.size() ; ++i) {
+    outfile.print(populations[i].name);
+    if(i+1<populations.size()) outfile.print("\t");
+  }
+  outfile.print("\n");
   int numIndiv=numFields-9;
   individuals.resize(numIndiv);
-  for(int i=0 ; i<numIndiv ; ++i)
-    individuals[i].id=fields[i+9];
+  for(int i=0 ; i<numIndiv ; ++i) {
+    const String &id=fields[i+9];
+    Individual &indiv=individuals[i];
+    indiv.id=id;
+    indiv.populationIndex=indivToPopIndex[id];
+  }
+  numIndividuals=numIndiv;
 }
 
 
 
 void Application::parseVariantAndGenotypes(const Vector<String> &fields,
-					   const String &line)
+					   const String &line,File &outfile)
 {
-  if(!parseVariant(fields)) return;
+  if(!parseVariant(fields,outfile)) return;
   const int numIndiv=fields.size()-9;
-
-  // The usual case: a genotype is listed for all individuals
-  if(numIndiv==numIndividuals) 
-    for(int i=0 ; i<numIndiv ; ++i) {
-      const String &genotype=fields[i+9];
-      Individual &indiv=individuals[i];
-      indiv.genotypes.push_back(genotype);
-    }
-  else throw String("Number of fields in VCF line does not match the number of individuals: ")+line;
-}
-
-
-
-void Application::output(File &out)
-{
-  // Output list of variants
-  const int numVariants=variants.size();
-  for(int i=0 ; i<numVariants ; ++i) {
-    const Variant &v=variants[i];
-    out.print(v.asString());
-    out.print(i+1<numVariants ? "\t" : "\n");
+  if(numIndiv!=numIndividuals) {
+    cout<<numIndiv<<"\t"<<numIndividuals<<endl;
+    throw String("Number of fields in VCF line does not match the number of individuals: ")+line;
   }
-  if(numVariants==0) out.print("\n");
-
-  // Output individual genotypes
-  for(Vector<Individual>::const_iterator cur=individuals.begin(), 
-	end=individuals.end() ; cur!=end ; ++cur) {
-    const Individual &indiv=*cur;
-    //if(numVariants==0) { out.print(indiv.id+"\n"); continue; }
-    if(indiv.genotypes.size()==0) { out.print(indiv.id+"\n"); continue; }
-    out.print(indiv.id+"\t");
-    
-    const int numVariants=indiv.genotypes.size();
-    for(int i=0 ; i<numVariants ; ++i) {
-      out.print(indiv.genotypes[i]);
-      out.print(i+1<numVariants ? "\t" : "\n");
-    }
-    //out.print(indiv.genotypes);  out.print("\n");
+  clearCounts();
+  for(int i=0 ; i<numIndiv ; ++i) {
+    const String &genotype=fields[i+9];
+    const Individual &indiv=individuals[i];
+    Population &pop=populations[indiv.populationIndex];
+    Vector<String> fields; genotype.getFields(fields,"|/");
+    for(Vector<String>::iterator cur=fields.begin(), end=fields.end() ;
+	cur!=end ; ++cur)
+      pop.increment((*cur).asInt());
   }
-}
-
-
-
-void Application::preprocess(File &infile)
-{
-  while(!infile.eof()) {
-    String line=infile.getline();
-    line.trimWhitespace();
-    Vector<String> &fields=*line.getFields();
-    if(fields.size()>0) {
-      if(fields[0]=="#CHROM") parseChromLine(fields);
-      else if(fields[0][0]!='#') parseVariant(fields);
-    }
-    delete &fields;
+  for(int i=0 ; i<populations.size() ; ++i) {
+    const Population &pop=populations[i];
+    const int major=pop.majorAllele();
+    outfile.print(major);
+    if(i+1<populations.size()) outfile.print("\t");
   }
+  outfile.print("\n");
 }
 
 
@@ -261,12 +251,13 @@ bool Application::parseVariant(const Vector<String> &fields,
 
 
 
-bool Application::parseVariant(const Vector<String> &fields)
+bool Application::parseVariant(const Vector<String> &fields,File &outfile)
 {
   String chr, ref, id;
   Vector<String> alt;
   int pos;
   if(!parseVariant(fields,chr,pos,ref,alt,id)) return false;
+  for(int i=0 ; i<9 ; ++i) outfile.print(fields[i]+"\t");
   variants.push_back(Variant(chr,pos,ref,alt,id));
   return true;
 }
@@ -275,17 +266,30 @@ bool Application::parseVariant(const Vector<String> &fields)
 
 void Application::processPopFile(const String &filename)
 {
+  Map<String,int> popMap;
   File file(filename);
   while(!file.eof()) {
     String line=file.getline();
     line.trimWhitespace(); if(line.empty()) continue;
     Vector<String> fields; line.getFields(fields);
     if(fields.size()<2) continue;
-    
+    String indiv=fields[0], pop=fields[1];
+    if(!popMap.isDefined(pop)) {
+      popMap[pop]=populations.size();
+      populations.push_back(Population(pop));
+    }
+    indivToPopIndex[indiv]=popMap[pop];
   }
 }
 
 
+
+void Application::clearCounts()
+{
+  for(Vector<Population>::iterator cur=populations.begin(), 
+	end=populations.end() ; cur!=end ; ++cur)
+    (*cur).clearCounts();
+}
 
 
 
