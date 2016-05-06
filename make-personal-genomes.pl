@@ -6,13 +6,15 @@ use FastaWriter;
 use GffTranscriptReader;
 use ConfigFile;
 use Getopt::Std;
-our ($opt_d);
-getopts('d');
+our ($opt_d,$opt_b);
+getopts('db');
+$_=1;
 
 die "\n
 make-personal-genomes.pl [-d] <fbi.config> <genes.gff> <out-dir>
 
 -d = dry run: no output, just report errors
+-b = genes file is actually a BED6 file of regions
 
 Assumptions:
  * VCF files must be zipped with bgzip and have accompanying tbi indexes
@@ -30,6 +32,7 @@ my ($configFile,$gffFile,$outDir)=@ARGV;
 
 
 my $DRY_RUN=$opt_d;
+my $NO_GFF=$opt_b;
 my $DEBUG=0;
 my $VERBOSE=1;
 my $MARGIN_AROUND_GENE=1000;
@@ -65,7 +68,7 @@ my $fastaWriter=new FastaWriter;
 #==============================================================
 
 my $gffReader=new GffTranscriptReader();
-my $genes=$gffReader->loadGenes($gffFile);
+my $genes=$NO_GFF ? loadRegions($gffFile) : $gffReader->loadGenes($gffFile);
 
 #==============================================================
 # Make FASTA files for each individual
@@ -99,22 +102,25 @@ for(my $j=1 ; $j<=$ploidy ; ++$j) {
 my $numGenes=@$genes;
 print "$numGenes genes loaded\n";
 my %skipped;
-if(!$DRY_RUN) { open(GFF,">$outGFF") || die "Can't create file $outGFF" }
+if(!$DRY_RUN && !$NO_GFF)
+  { open(GFF,">$outGFF") || die "Can't create file $outGFF" }
 for(my $i=0 ; $i<$numGenes ; ++$i) {
   my $gene=$genes->[$i];
-  my $geneName=$gene->getId();
-  print "gene $geneName\n";
-  my $chr=$gene->getSubstrate();
+  my $geneName=$NO_GFF ? $gene->{id} : $gene->getId();
+  print "gene $geneName $i of $numGenes\n";
+  my $chr=$NO_GFF ? $gene->{substrate} : $gene->getSubstrate();
   my $chrVcfFile=$chrToVCF{$chr};
   if(!$chrVcfFile) { $skipped{$chr}=1; print "Warning: skipping $chr (no VCF)\n"; next }
-  my $begin=$gene->getBegin()-$MARGIN_AROUND_GENE;
-  my $end=$gene->getEnd()+$MARGIN_AROUND_GENE;
-  if(!$DRY_RUN) { writeLocalGFF($gene,$begin,*GFF) }
+  my $begin=$NO_GFF ? $gene->{begin}-$MARGIN_AROUND_GENE :
+    $gene->getBegin()-$MARGIN_AROUND_GENE;
+  my $end=$NO_GFF ? $gene->{end}+$MARGIN_AROUND_GENE :
+    $gene->getEnd()+$MARGIN_AROUND_GENE;
+  if(!$DRY_RUN && !$NO_GFF) { writeLocalGFF($gene,$begin,*GFF) }
   if($begin<0) { $begin=0 }
   if(!defined($chromLen{$chr})) { $skipped{$chr}=1; print "Warning: skipping $chr (no length)\n"; next }
   if($end>$chromLen{$chr}) { $end=$chromLen{$chr} }
-  my $strand=$gene->getStrand();
-  my $name=$gene->getId();
+  my $strand=$NO_GFF ? $gene->{strand} : $gene->getStrand();
+  my $name=$NO_GFF ? $gene->{id} : $gene->getId();
   writeBed4($chr,$begin,$end,$name,$tempBedFile);
   System("$twoBitToFa -bed=$tempBedFile -noMask $twoBitFile $refGeneFasta");
   writeBed3($chr,$begin,$end,$tempBedFile);
@@ -131,35 +137,50 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   if($err=~/error/ || $err=~/Abort/) { die $err }
   my (%warnings,%errors);
   loadErrors($errFile,\%warnings,\%errors);
-  system("cat $errFile >> $outDir/errors.txt");
+  System("cat $errFile >> $outDir/errors.txt");
   next if $DRY_RUN;
   die unless -e $altGeneFasta;
   die if -z $altGeneFasta;
   my $fastaReader=new FastaReader($altGeneFasta);
+print "trace 1\n";
   while(1) {
+print "trace 2\n";
     my ($def,$seq)=$fastaReader->nextSequence();
+print "trace 3\n";
     last unless $def;
+print "trace 4\n";
     $def=~/>\S+\s+\/individual=(\S+)\s+\/allele=(\d+)\s+\/locus=(\S+)\s+\/coord=(\S+)\s+\/cigar=(\S+)\s+\/variants=(\S*)/
       || die "Can't parse defline: $def\n";
+print "trace 5\n";
     my ($indivID,$alleleNum,$geneID,$coord,$cigar,$variants)=
       ($1,$2,$3,$4,$5,$6);
+print "trace 6\n";
     if($keepIDs{$indivID}) {
+print "trace 7\n";
       my $file=$fastaFiles{$indivID}->[$alleleNum-1];
       my $key="$indivID $geneID";
       my $numWarn=0+$warnings{$key};
       my $numErr=0+$errors{$key};
+print "trace 8\n";
       open(FASTA,">>$file") || die $file;
+print "trace 9\n";
       $def=">${geneID}_$alleleNum /coord=$coord /margin=$MARGIN_AROUND_GENE /cigar=$cigar /warnings=$numWarn /errors=$numErr /variants=$variants";
       $fastaWriter->addToFasta($def,$seq,\*FASTA);
+print "trace 10\n";
       close(FASTA);
+print "trace 11\n";
     }
+print "trace 12\n";
     undef $seq; undef $def;
     undef $indivID; undef $alleleNum ; undef $geneID ; undef $coord;
   }
+print "trace 13\n";
   $fastaReader->close();
-  last if $DEBUG;
+print "trace 14\n";
+  #last if $DEBUG;
 }
-close(GFF);
+print "trace 15\n";
+close(GFF) unless $NO_GFF;
 my @skipped=keys %skipped;
 foreach my $skipped (@skipped) { print "warning: skipped $skipped\n" }
 
@@ -167,6 +188,7 @@ foreach my $skipped (@skipped) { print "warning: skipped $skipped\n" }
 # Clean up
 #==============================================================
 
+print "done.\n";
 if(!$DEBUG) {
   unlink($refGeneFasta);
   unlink($altGeneFasta);
@@ -301,5 +323,28 @@ sub writeLocalGFF
   }
 }
 #==============================================================
+sub loadRegions
+{
+  my ($filename)=@_;
+  my $genes=[];
+  open(IN,$filename) || die "can't open $filename\n";
+  while(<IN>) {
+    chomp;
+    my @fields=split; next unless @fields>0;
+    if(@fields<6) { die "BED6 file has fewer than 6 fields: $filename\n" }
+    my ($chr,$begin,$end,$name,$score,$strand)=@fields;
+    my $gene=
+      {
+       substrate=>$chr,
+       begin=>$begin,
+       end=>$end,
+       id=>$name,
+       strand=>$strand
+      };
+    push @$genes,$gene;
+  }
+  close(IN);
+  return $genes;
+}
 #==============================================================
 

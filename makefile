@@ -2443,6 +2443,7 @@ $(OBJ)/fbi.o:\
 		fbi.C
 #---------------------------------------------------------
 fbi: \
+		$(OBJ)/OrfAnalyzer.o \
 		$(OBJ)/VariantClassifier.o \
 		$(OBJ)/StartCodonFinder.o \
 		$(OBJ)/SignalSensors.o \
@@ -2502,6 +2503,7 @@ fbi: \
 		$(OBJ)/ProjectionChecker.o \
 		$(OBJ)/fbi.o
 	$(CC) $(LDFLAGS) -o fbi \
+		$(OBJ)/OrfAnalyzer.o \
 		$(OBJ)/VariantClassifier.o \
 		$(OBJ)/StartCodonFinder.o \
 		$(OBJ)/SignalSensors.o \
@@ -3138,4 +3140,10 @@ $(OBJ)/VariantClassifier.o:\
 		VariantClassifier.H
 	$(CC) $(CFLAGS) -o $(OBJ)/VariantClassifier.o -c \
 		VariantClassifier.C
+#---------------------------------------------------------
+$(OBJ)/OrfAnalyzer.o:\
+		OrfAnalyzer.C\
+		OrfAnalyzer.H
+	$(CC) $(CFLAGS) -o $(OBJ)/OrfAnalyzer.o -c \
+		OrfAnalyzer.C
 #---------------------------------------------------------
