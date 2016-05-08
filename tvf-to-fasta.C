@@ -244,6 +244,35 @@ void Application::convert(File &tvf,ostream *os,const String genomeFile)
     for(Vector<String>::const_iterator cur=fields.begin(), end=fields.end() ;
 	cur!=end ; ++cur) {
       const String &field=*cur;
+      if(field.contains("/")) throw "Abort: VCF file is not phased";
+      Vector<String> subfields; field.getFields(subfields,"|");
+      if(subfields.size()==1) {
+	Genotype gt(1);
+	if(subfields[0]==".") gt.alleles[0]=0;
+	else {
+	  gt.alleles[0]=subfields[0].asInt();
+	  if(gt.alleles[0]<0 || gt.alleles[0]>99)
+	    throw String("Abort: ")+subfields[0]+" : unknown allele indicator";
+	}
+	loci.push_back(gt);
+      }
+      else if(subfields.size()==2) { // ### ASSUMES DIPLOID
+	Genotype gt(2);
+	if(subfields[0]==".") gt.alleles[0]=0;
+	else { 
+	  gt.alleles[0]=subfields[0].asInt(); 
+	  if(gt.alleles[0]<0 || gt.alleles[0]>99) 
+	    throw String("Abort: ")+subfields[0]+" : unknown allele indicator";
+	}
+	if(subfields[1]==".") gt.alleles[1]=0;
+	else {
+	  gt.alleles[1]=subfields[1].asInt();
+	  if(gt.alleles[1]<0 || gt.alleles[1]>99)
+	    throw String("Abort: ")+subfields[1]+" : unknown allele indicator";
+	}
+	loci.push_back(gt);
+      }
+      /*
       if(field.getLength()==1) {
 	Genotype gt(1);
 	if(field[0]=='.') gt.alleles[0]=0;
@@ -271,6 +300,7 @@ void Application::convert(File &tvf,ostream *os,const String genomeFile)
 	}
 	loci.push_back(gt);
       }
+*/
       else throw String("Abort: Cannot parse genotype: ")+field;
     }
     delete &fields;
