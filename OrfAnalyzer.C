@@ -89,12 +89,13 @@ Essex::CompositeNode *OrfAnalyzer::noncodingToCoding(
 
 
 Essex::CompositeNode *
-OrfAnalyzer::earlierStartCodon(const GffTranscript &altTrans,
-			       const String &altStr,
-			       const Sequence &altSeq,
+OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
 			       const String &refStr,
 			       const Sequence &refSeq,
-			       const CigarAlignment &alignment,
+			       const GffTranscript &altTrans,
+			       const String &altStr,
+			       const Sequence &altSeq,
+			       const CigarAlignment &altToRef,
 			       int &oldOrfLen,
 			       int &newOrfLen,
 			       float &oldStartCodonScore,
@@ -106,7 +107,41 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &altTrans,
   int altGenomicStart;
   GffTranscript *altORF=findORF(altTrans,altStr,altSeq,newStartCodonScore,
 				altGenomicStart,newOrfLen);
+  int oldBegin, oldEnd;
+  altTrans.getCDSbeginEnd(oldBegin,oldEnd);
+  if(altGenomicStart>=oldBegin) { delete altORF; return NULL; }
 
+  // Check that the start codon was in exonic sequence in the ref
+  const int refGenomicStart=altToRef.mapApproximate(altGenomicStart,DIR_RIGHT);
+  const int refLocalStart=refTrans.mapToTranscriptCoords(refGenomicStart);
+  bool change=refLocalStart<0;
+
+  // Score the old start codon
+  if(refLocalStart>=0) {
+    GffTranscript refCopy(refTrans);
+    refCopy.loadSequence(refStr);
+    String refRNA=refCopy.getFullSequence();
+    SignalSensor *sensor=sensors.startCodonSensor;
+    const int offset=sensor->getConsensusOffset();
+    const int windowLen=sensor->getContextWindowLength();
+    const int begin=refLocalStart-offset;
+    if(begin<0) change=true;
+    else {
+      float refScore=sensor->getLogP(refSeq,refStr,begin);
+      if(newStartCodonScore>refScore) change=true;
+    }
+  }
+
+  // Check whether the reading frame has changed
+  int refBegin, refEnd;
+  refTrans.getCDSbeginEnd(refBegin,refEnd);
+  const int localRefBegin=refTrans.mapToTranscriptCoords(refBegin);
+  if((localRefBegin-refLocalStart)%3==0) change=true;
+
+  // Report results
+  Essex::CompositeNode *altEssex=change ? altORF->toEssex() : NULL;
+  delete altORF;
+  return altEssex;
 }
 
 
