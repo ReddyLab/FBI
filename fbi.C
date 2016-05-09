@@ -60,30 +60,36 @@ private:
   bool allowExonSkipping, allowIntronRetention, allowCrypticSites;
   bool reverseStrand, quiet;
   String CIGAR;
+  CigarString cigar;
   OrfAnalyzer *orfAnalyzer;
   Essex::CompositeNode *root;
   Essex::Node *startCodonMsg;
   Vector<Variant> variants;
   Regex warningsRegex, errorsRegex, variantRegex, coordRegex;
   int VCFwarnings, VCFerrors;
+  String refSeqStr, altSeqStr;
+  Sequence refSeq, altSeq;
   int refSeqLen, altSeqLen;
+  GffTranscript *refTrans;
+  String refProtein;
   float openPenalty, extendPenalty;
   int bandwidth;
   CigarAlignment *alignment, *revAlignment;
   SubstitutionMatrix<float> *substMatrix; // protein matrix
   GarbageIgnorer garbageCollector;
   void commandLineOpts(const CommandLine &);
+  void loadInputs(const String &configFile,
+		  const String &refGffFile,
+		  const String &refFasta,
+		  const String &altFasta);
+  void buildAlignment();
   GffTranscript *loadGff(const String &filename);
   void parseNoncanonicals(const String &,Set<String> &);
   String loadSeq(const String &filename);
   String loadSeq(const String &filename,String &cigar);
   void computeLabeling(GffTranscript &,Labeling &);
-  void mapLabeling(Labeling &from,Labeling &to,const CigarString &);
-  void mapTranscript(GffTranscript &,
-		     const CigarString &,
-		     const String &outfile,
-		     const String &genome,
-		     const Sequence &genomeSeq);
+  void mapLabeling(Labeling &from,Labeling &to);
+  void mapTranscript(const String &outfile);
   bool mapExon(GffExon &,CigarAlignment &);
   void writeProtein(const String &defline,
 		    const String &protein,
@@ -112,52 +118,26 @@ private:
 		     Vector<Variant> &,
 		     int substrateLen);
   Essex::CompositeNode *makeEssexVariants();
+  bool checkRefGene(Essex::CompositeNode *status);
   void checkProjection(const String &outGff,
-		       GffTranscript *refTrans,
 		       bool &mapped,
-		       const String &refSeqStr,
-		       const String &altSeqStr,
-		       const Sequence &refSeq,
-		       const Sequence &altSeq,
 		       const Labeling &projectedLab,
-		       int altSeqLen,
 		       Essex::CompositeNode *status,
-		       ostream &osFBI,
-		       const String &refProtein);
+		       ostream &osFBI);
   void handleProteinFate(const AlternativeStructure &,
-			 Essex::CompositeNode *,
-			 const String refProtein,
-			 const String &altSeqStr,
-			 const GffTranscript *refTrans);
+			 Essex::CompositeNode *);
   int enumerateAlts(Essex::CompositeNode *altTransEssex,
 		    TranscriptSignals *signals,
 		    Essex::CompositeNode *status,
-		    const String &altSeqStr,
-		    int altSeqLen,
-		    const String &refProtein,
-		    const GffTranscript *refTrans,
 		    GffTranscript *altTrans,
-		    Essex::CompositeNode *root,
 		    ostream &osFBI);
   void handleNoncoding(Essex::CompositeNode *status,
-		       const GffTranscript *refTrans,
-		       const GffTranscript *altTrans,
-		       const String &refSeqStr,
-		       const String &altSeqStr,
-		       const Sequence &refSeq,
-		       const Sequence &altSeq);
+		       const GffTranscript *altTrans);
   void handleCoding(Essex::CompositeNode *status,
-		    GffTranscript *refTrans,
 		    GffTranscript *altTrans,
-		    const String &refSeqStr,
-		    const String &altSeqStr,
-		    const Sequence &refSeq,
-		    const Sequence &altSeq,
 		    ProjectionChecker &checker,
 		    const Labeling &projectedLab);
-  void initEssex(GffTranscript *refTrans,
-		 int refSeqLen,
-		 ostream &osFBI,
+  void initEssex(ostream &osFBI,
 		 Essex::CompositeNode *status,
 		 const CommandLine &);
 };
@@ -250,46 +230,29 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   commandLineOpts(cmd);
 
   // Read some data from files
-  processConfig(configFile);
-  String refSeqStr=loadSeq(refFasta), altSeqStr=loadSeq(altFasta,CIGAR);
-  const Sequence refSeq(refSeqStr,alphabet), altSeq(altSeqStr,alphabet);
-  refSeqLen=refSeqStr.length(), altSeqLen=altSeqStr.length();
-  GffTranscript *refTrans=loadGff(refGffFile);
-  refTrans->loadSequence(refSeqStr);
-  String refProtein=refTrans->getProtein();
+  loadInputs(configFile,refGffFile,refFasta,altFasta);
 
   // Set up to generate structured output in Essex/XML
   ofstream osFBI(outFBI.c_str());
   Essex::CompositeNode *status=new Essex::CompositeNode("status");
-  initEssex(refTrans,refSeqLen,osFBI,status,cmd);
+  initEssex(osFBI,status,cmd);
   
   // Check that the reference gene is well-formed
-  bool noStart, noStop, PTC, badSpliceSite, referenceIsOK=true;
-  String msg;
-  if(!ProjectionChecker::geneIsWellFormed(*refTrans,refSeqStr,
-					  noStart,noStop,PTC,badSpliceSite,
-					  status,sensors,NMD_DISTANCE_PARM)) {
-    if(quiet) return -1;
-    status->prepend("bad-annotation");
-    referenceIsOK=false;
-  }
+  bool referenceIsOK=checkRefGene(status);
 
   // Compute the reference labeling
   Labeling refLab(refSeqLen);
   computeLabeling(*refTrans,refLab);
 
   // Make CIGAR alignment
-  CigarString cigar(CIGAR);
-  if(reverseStrand) cigar.reverse();
-  alignment=cigar.getAlignment();
-  revAlignment=alignment->invert(altSeqLen);
+  buildAlignment();
 
   // Project the reference GFF over to an alternate GFF
-  mapTranscript(*refTrans,cigar,outGff,altSeqStr,altSeq);
+  mapTranscript(outGff);
 
   // Generate labeling file
   Labeling projectedLab(altSeqLen);
-  mapLabeling(refLab,projectedLab,cigar);
+  mapLabeling(refLab,projectedLab);
   if(!labelingFile.empty()) {
     ofstream os(labelingFile.c_str());
     os<<projectedLab;
@@ -298,8 +261,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   // Check the projection to see if the gene might be broken
   bool mapped=false;
   if(referenceIsOK) 
-    checkProjection(outGff,refTrans,mapped,refSeqStr,altSeqStr,refSeq,
-		    altSeq,projectedLab,altSeqLen,status,osFBI,refProtein);
+    checkProjection(outGff,mapped,projectedLab,status,osFBI);
 
   // Flush output
   if(mapped && status && status->getNumChildren()<2 && quiet) return 0;
@@ -312,14 +274,61 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 
 
 /****************************************************************
+ FBI::buildAlignment()
+ ****************************************************************/
+void FBI::buildAlignment()
+{
+  cigar=CigarString(CIGAR);
+  if(reverseStrand) cigar.reverse();
+  alignment=cigar.getAlignment();
+  revAlignment=alignment->invert(altSeqLen);
+}
+
+
+
+/****************************************************************
+ FBI::loadInputs()
+ ****************************************************************/
+void FBI::loadInputs(const String &configFile,const String &refGffFile,
+		     const String &refFasta,const String &altFasta)
+{
+  processConfig(configFile);
+  refSeqStr=loadSeq(refFasta); altSeqStr=loadSeq(altFasta,CIGAR);
+  refSeq.copyFrom(refSeqStr,alphabet); altSeq.copyFrom(altSeqStr,alphabet);
+  refSeqLen=refSeqStr.length(), altSeqLen=altSeqStr.length();
+  refTrans=loadGff(refGffFile);
+  refTrans->loadSequence(refSeqStr);
+  refProtein=refTrans->getProtein();
+}
+
+
+
+/****************************************************************
+ FBI::checkRefGene()
+ ****************************************************************/
+bool FBI::checkRefGene(Essex::CompositeNode *status)
+{
+  bool noStart, noStop, PTC, badSpliceSite;
+  String msg;
+  if(!ProjectionChecker::geneIsWellFormed(*refTrans,refSeqStr,
+					  noStart,noStop,PTC,badSpliceSite,
+					  status,sensors,NMD_DISTANCE_PARM)) {
+    if(quiet) return -1;
+    status->prepend("bad-annotation");
+    return false;
+  }
+  return true;
+}
+
+
+
+/****************************************************************
  FBI::checkProjection()
  ****************************************************************/
-void FBI::checkProjection(const String &outGff,GffTranscript *refTrans,
-			  bool &mapped,const String &refSeqStr,
-			  const String &altSeqStr,const Sequence &refSeq,
-			  const Sequence &altSeq,const Labeling &projectedLab,
-			  int altSeqLen,Essex::CompositeNode *status,
-			  ostream &osFBI,const String &refProtein)
+void FBI::checkProjection(const String &outGff,
+			  bool &mapped,const Labeling &projectedLab,
+			  Essex::CompositeNode *status,
+			  ostream &osFBI)
 {
   GffTranscript *altTrans=loadGff(outGff);
   altTrans->loadSequence(altSeqStr);
@@ -344,9 +353,7 @@ void FBI::checkProjection(const String &outGff,GffTranscript *refTrans,
   
   // Enumerate alternative structures
   if(signals->anyBroken()) 
-    return enumerateAlts(altTransEssex,signals,status,altSeqStr,altSeqLen,
-			 refProtein,refTrans,altTrans,root,
-			 osFBI);
+    return enumerateAlts(altTransEssex,signals,status,altTrans,osFBI);
 
   // Otherwise, projection was successful
   status->prepend("mapped");
@@ -354,11 +361,10 @@ void FBI::checkProjection(const String &outGff,GffTranscript *refTrans,
 
   // Translate to proteins
   if(refTrans->isCoding()) 
-    handleCoding(status,refTrans,altTrans,refSeqStr,altSeqStr,refSeq,
-		 altSeq,checker,projectedLab);
+    handleCoding(status,altTrans,checker,projectedLab);
   else  // ref gene is noncoding
-    handleNoncoding(status,refTrans,altTrans,refSeqStr,altSeqStr,
-		    refSeq,altSeq);
+    handleNoncoding(status,altTrans);
+
   delete altTrans;
 }
 
@@ -367,7 +373,7 @@ void FBI::checkProjection(const String &outGff,GffTranscript *refTrans,
 /****************************************************************
  FBI::initEssex()
  ****************************************************************/
-void FBI::initEssex(GffTranscript *refTrans,int refSeqLen,ostream &osFBI,
+void FBI::initEssex(ostream &osFBI,
 		    Essex::CompositeNode *status,const CommandLine &cmd)
 {
   String transcriptID=refTrans->getTranscriptId();
@@ -408,12 +414,7 @@ void FBI::initEssex(GffTranscript *refTrans,int refSeqLen,ostream &osFBI,
  FBI::handleCoding()
  ****************************************************************/
 void FBI::handleCoding(Essex::CompositeNode *status,
-		       GffTranscript *refTrans,
 		       GffTranscript *altTrans,
-		       const String &refSeqStr,
-		       const String &altSeqStr,
-		       const Sequence &refSeq,
-		       const Sequence &altSeq,
 		       ProjectionChecker &checker,
 		       const Labeling &projectedLab)
 {
@@ -489,12 +490,7 @@ void FBI::handleCoding(Essex::CompositeNode *status,
  FBI::handleNoncoding()
  ****************************************************************/
 void FBI::handleNoncoding(Essex::CompositeNode *status,
-			  const GffTranscript *refTrans,
-			  const GffTranscript *altTrans,
-			  const String &refSeqStr,
-			  const String &altSeqStr,
-			  const Sequence &refSeq,
-			  const Sequence &altSeq)
+			  const GffTranscript *altTrans)
 {
   if(!quiet) status->append("noncoding");
   int refOrfLen, altOrfLen;
@@ -523,12 +519,7 @@ void FBI::handleNoncoding(Essex::CompositeNode *status,
 int FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
 		       TranscriptSignals *signals,
 		       Essex::CompositeNode *status,
-		       const String &altSeqStr,
-		       int altSeqLen,
-		       const String &refProtein,
-		       const GffTranscript *refTrans,
 		       GffTranscript *altTrans,
-		       Essex::CompositeNode *root,
 		       ostream &osFBI)
 {
   altTransEssex->deleteChild("translation");
@@ -573,7 +564,7 @@ int FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
       }
       if(msg) status->append(msg);
       altStructNode->append(node);
-      handleProteinFate(s,node,refProtein,altSeqStr,refTrans);
+      handleProteinFate(s,node);
     }
   }
   else status->prepend("no-transcript");
@@ -590,10 +581,7 @@ int FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
  FBI::handleProteinFate
  ****************************************************************/
 void FBI::handleProteinFate(const AlternativeStructure &s,
-			    Essex::CompositeNode *node,
-			    const String refProtein,
-			    const String &altSeqStr,
-			    const GffTranscript *refTrans)
+			    Essex::CompositeNode *node)
 {
   switch(s.proteinFate) {
   case NMD_NONE:{      // nothing wrong
@@ -769,10 +757,8 @@ void FBI::computeLabeling(GffTranscript &transcript,
 /****************************************************************
  FBI::mapLabeling()
  ****************************************************************/
-void FBI::mapLabeling(Labeling &from,Labeling &to,
-			      const CigarString &cigar)
+void FBI::mapLabeling(Labeling &from,Labeling &to)
 {
-  //  CigarAlignment &align=*cigar.getAlignment();
   CigarAlignment &align=*alignment;
   to.asArray().setAllTo(LABEL_NONE);
   int L=align.length();
@@ -806,19 +792,15 @@ bool FBI::mapExon(GffExon &exon,CigarAlignment &align)
 /****************************************************************
  FBI::mapTranscript()
  ****************************************************************/
-void FBI::mapTranscript(GffTranscript &refTrans,
-				const CigarString &cigar,
-				const String &outfile,
-				const String &altSeqStr,
-				const Sequence &altSeq)
+void FBI::mapTranscript(const String &outfile)
 {
-  CigarAlignment &align=*alignment;//*cigar.getAlignment();
+  CigarAlignment &align=*alignment;
   Vector<GffExon*> rawExons;
-  refTrans.getRawExons(rawExons);
-  GffTranscript transcript(refTrans.getTranscriptId(),
-			   refTrans.getSubstrate(),
-			   refTrans.getStrand(),"FBI");
-  transcript.setGeneId(refTrans.getGeneId());
+  refTrans->getRawExons(rawExons);
+  GffTranscript transcript(refTrans->getTranscriptId(),
+			   refTrans->getSubstrate(),
+			   refTrans->getStrand(),"FBI");
+  transcript.setGeneId(refTrans->getGeneId());
   transcript.setSubstrate(substrate);
   transcript.getSource()="FBI";
   for(Vector<GffExon*>::iterator cur=rawExons.begin(), end=rawExons.end() ;
@@ -828,9 +810,9 @@ void FBI::mapTranscript(GffTranscript &refTrans,
     transcript.addUTR(exon);
   }
   GffTranscript::deleteExons(rawExons);
-  if(refTrans.isCoding()) {
+  if(refTrans->isCoding()) {
     int mappedStartCodon=
-      align.mapApproximate(refTrans.getIthExon(0).getBegin(),DIR_LEFT);
+      align.mapApproximate(refTrans->getIthExon(0).getBegin(),DIR_LEFT);
     int startCodon=StartCodonFinder::findStartCodon(transcript,
 						    transcript.peekUTR(),
 						    altSeqStr,
