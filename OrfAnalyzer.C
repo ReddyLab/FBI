@@ -117,18 +117,18 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   bool change=refLocalStart<0;
 
   // Score the old start codon
+  SignalSensor *sensor=sensors.startCodonSensor;
+  const int offset=sensor->getConsensusOffset();
+  const int windowLen=sensor->getContextWindowLength();
   if(refLocalStart>=0) {
     GffTranscript refCopy(refTrans);
     refCopy.loadSequence(refStr);
     String refRNA=refCopy.getFullSequence();
-    SignalSensor *sensor=sensors.startCodonSensor;
-    const int offset=sensor->getConsensusOffset();
-    const int windowLen=sensor->getContextWindowLength();
     const int begin=refLocalStart-offset;
     if(begin<0) change=true;
     else {
       float refScore=sensor->getLogP(refSeq,refStr,begin);
-      if(newStartCodonScore>refScore) change=true;
+      if(refScore<sensor->getCutoff()) change=true;
     }
   }
 
@@ -138,6 +138,13 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   const int localRefBegin=refTrans.mapToTranscriptCoords(refBegin);
   if((localRefBegin-refLocalStart)%3==0) change=true;
 
+  // Compute oldStartCodonScore 
+  const int altLocal=altTrans.mapToTranscriptCoords(oldBegin);
+  GffTranscript altCopy(altTrans);
+  altCopy.loadSequence(altStr);
+  String altRNA=altCopy.getFullSequence();
+  oldStartCodonScore=sensor->getLogP(altSeq,altStr,altLocal-offset);
+  
   // Report results
   Essex::CompositeNode *altEssex=change ? altORF->toEssex() : NULL;
   delete altORF;
