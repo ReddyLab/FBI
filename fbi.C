@@ -127,10 +127,15 @@ private:
 		       ostream &osFBI);
   void handleProteinFate(const AlternativeStructure &,
 			 Essex::CompositeNode *);
-  int enumerateAlts(Essex::CompositeNode *altTransEssex,
-		    TranscriptSignals *signals,
-		    GffTranscript *altTrans,
-		    ostream &osFBI);
+  void enumerateAlts(Essex::CompositeNode *altTransEssex,
+		     TranscriptSignals *signals,
+		     GffTranscript *altTrans,
+		     ostream &osFBI);
+  void processAltStructure(const AlternativeStructure &,
+			   Essex::CompositeNode *altStructNode);
+  void listStructureChanges(const AlternativeStructure &,
+			    Essex::CompositeNode *,
+			    Essex::CompositeNode *&msg);
   void handleNoncoding(const GffTranscript *altTrans);
   void handleCoding(GffTranscript *altTrans,
 		    ProjectionChecker &checker,
@@ -277,6 +282,19 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 
 
 /****************************************************************
+ FBI::commandLineOpts()
+ ****************************************************************/
+void FBI::commandLineOpts(const CommandLine &cmd)
+{
+  if(cmd.option('l')) labelingFile=cmd.optParm('l');
+  if(cmd.option('x')) xmlFilename=cmd.optParm('x');
+  reverseStrand=cmd.option('c');
+  quiet=cmd.option('q');
+}
+
+
+
+/****************************************************************
  FBI::buildAlignment()
  ****************************************************************/
 void FBI::buildAlignment()
@@ -354,8 +372,10 @@ void FBI::checkProjection(const String &outGff,
   }
   
   // Enumerate alternative structures
-  if(signals->anyBroken()) 
-    return enumerateAlts(altTransEssex,signals,altTrans,osFBI);
+  if(signals->anyBroken()) {
+    enumerateAlts(altTransEssex,signals,altTrans,osFBI);
+    return;
+  }
 
   // Otherwise, projection was successful
   status->prepend("mapped");
@@ -514,9 +534,9 @@ void FBI::handleNoncoding(const GffTranscript *altTrans)
 
 
 /****************************************************************
- FBI::enumerateAlts
+ FBI::enumerateAlts()
  ****************************************************************/
-int FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
+void FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
 		       TranscriptSignals *signals,
 		       GffTranscript *altTrans,
 		       ostream &osFBI)
@@ -540,30 +560,7 @@ int FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
 	  altStructures.begin(), end=altStructures.end() ; cur!=end ; 
 	++cur) {
       const AlternativeStructure &s=**cur;
-      Essex::CompositeNode *msg=s.msg;
-      s.transcript->loadSequence(altSeqStr);
-      s.transcript->computePhases();
-      if(reverseStrand) s.transcript->reverseComplement(altSeqLen);
-      Essex::CompositeNode *node=s.transcript->toEssex();
-      VariantClassifier classifier(variants,VariantClassifier::ALT,
-				   *s.transcript);
-      node->append(classifier.makeVariantsNode());
-      s.reportCrypticSites(node,reverseStrand,altSeqLen);
-      if(s.structureChange.anyChange()) {
-	Essex::CompositeNode *changeNode=
-	  new Essex::CompositeNode("structure-change");
-	node->prepend(changeNode);
-	if(s.structureChange.crypticSite) 
-	  changeNode->append("cryptic-site");
-	if(s.structureChange.exonSkipping) 
-	  changeNode->append("exon-skipping");
-	if(s.structureChange.intronRetention) 
-	  changeNode->append("intron-retention");
-	if(msg) { changeNode->append(msg); msg=NULL; }
-      }
-      if(msg) status->append(msg);
-      altStructNode->append(node);
-      handleProteinFate(s,node);
+      processAltStructure(s,altStructNode);
     }
   }
   else status->prepend("no-transcript");
@@ -571,13 +568,58 @@ int FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
   osFBI<<*root<<endl;
   osFBI<<"#===========================================================\n";
   delete altTrans;
-  return 0;
 }
 
 
 
 /****************************************************************
- FBI::handleProteinFate
+ FBI::processAltStructure()
+ ****************************************************************/
+void FBI::processAltStructure(const AlternativeStructure &s,
+			      Essex::CompositeNode *altStructNode)
+{
+  Essex::CompositeNode *msg=s.msg;
+  s.transcript->loadSequence(altSeqStr);
+  s.transcript->computePhases();
+  if(reverseStrand) s.transcript->reverseComplement(altSeqLen);
+  Essex::CompositeNode *node=s.transcript->toEssex();
+  VariantClassifier classifier(variants,VariantClassifier::ALT,
+			       *s.transcript);
+  node->append(classifier.makeVariantsNode());
+  s.reportCrypticSites(node,reverseStrand,altSeqLen);
+  listStructureChanges(s,node,msg);
+  if(msg) status->append(msg);
+  altStructNode->append(node);
+  handleProteinFate(s,node);
+}
+
+
+
+/****************************************************************
+ FBI::listStructureChanges()
+ ****************************************************************/
+void FBI::listStructureChanges(const AlternativeStructure &s,
+			       Essex::CompositeNode *node,
+			       Essex::CompositeNode *&msg)
+{
+  if(s.structureChange.anyChange()) {
+    Essex::CompositeNode *changeNode=
+      new Essex::CompositeNode("structure-change");
+    node->prepend(changeNode);
+    if(s.structureChange.crypticSite) 
+      changeNode->append("cryptic-site");
+    if(s.structureChange.exonSkipping) 
+      changeNode->append("exon-skipping");
+    if(s.structureChange.intronRetention) 
+      changeNode->append("intron-retention");
+    if(msg) { changeNode->append(msg); msg=NULL; }
+  }
+}
+
+
+
+/****************************************************************
+ FBI::handleProteinFate()
  ****************************************************************/
 void FBI::handleProteinFate(const AlternativeStructure &s,
 			    Essex::CompositeNode *node)
@@ -629,7 +671,7 @@ void FBI::handleProteinFate(const AlternativeStructure &s,
 
 
 /****************************************************************
- FBI::appendBrokenSignals
+ FBI::appendBrokenSignals()
  ****************************************************************/
 void FBI::appendBrokenSignals(const TranscriptSignals *signals)
 {
@@ -1066,10 +1108,3 @@ Essex::CompositeNode *FBI::makeEssexVariants()
 
 
 
-void FBI::commandLineOpts(const CommandLine &cmd)
-{
-  if(cmd.option('l')) labelingFile=cmd.optParm('l');
-  if(cmd.option('x')) xmlFilename=cmd.optParm('x');
-  reverseStrand=cmd.option('c');
-  quiet=cmd.option('q');
-}
