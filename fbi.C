@@ -33,10 +33,18 @@ using namespace std;
 using namespace BOOM;
 
 
+/****************************************************************
+ Globals
+ ****************************************************************/
 static const char *PROGRAM_NAME="find-variant-signals";
 static const char *VERSION="1.0";
 Alphabet alphabet;
 
+
+
+/****************************************************************
+ class FBI
+ ****************************************************************/
 class FBI {
 public:
   FBI();
@@ -64,17 +72,21 @@ private:
   CigarAlignment *alignment, *revAlignment;
   SubstitutionMatrix<float> *substMatrix; // protein matrix
   GarbageIgnorer garbageCollector;
+  void commandLineOpts(const CommandLine &);
   GffTranscript *loadGff(const String &filename);
   void parseNoncanonicals(const String &,Set<String> &);
   String loadSeq(const String &filename);
   String loadSeq(const String &filename,String &cigar);
   void computeLabeling(GffTranscript &,Labeling &);
   void mapLabeling(Labeling &from,Labeling &to,const CigarString &);
-  void mapTranscript(GffTranscript &,const CigarString &,
-		     const String &outfile,const String &genome,
+  void mapTranscript(GffTranscript &,
+		     const CigarString &,
+		     const String &outfile,
+		     const String &genome,
 		     const Sequence &genomeSeq);
   bool mapExon(GffExon &,CigarAlignment &);
-  void writeProtein(const String &defline,const String &protein,
+  void writeProtein(const String &defline,
+		    const String &protein,
 		    const String &filename);
   void append(Essex::CompositeNode *,const String &tag,const String &message);
   void append(Essex::CompositeNode *,const char *tag,const char *message);
@@ -84,15 +96,26 @@ private:
 			   Essex::CompositeNode *status);
   void writeXML();
   void processConfig(const String &filename);
-  void parseConsensusList(const String &tag,ConfigFile &,Set<String> &into);
-  SignalSensor *loadModel(const String &label,ConfigFile &);
-  float alignProteins(const String &refStr,const String &altStr,int &matches);
-  void percentMatch(int matches,int refLen,int altLen,
+  void parseConsensusList(const String &tag,
+			  ConfigFile &,
+			  Set<String> &into);
+  SignalSensor *loadModel(const String &label,
+			  ConfigFile &);
+  float alignProteins(const String &refStr,
+		      const String &altStr,
+		      int &matches);
+  void percentMatch(int matches,
+		    int refLen,
+		    int altLen,
 		    Essex::CompositeNode *parent);
-  void parseVariants(const String &,Vector<Variant> &,int substrateLen);
+  void parseVariants(const String &,
+		     Vector<Variant> &,
+		     int substrateLen);
   Essex::CompositeNode *makeEssexVariants();
-  void handleProteinFate(const AlternativeStructure &,Essex::CompositeNode *,
-			 const String refProtein,const String &altSeqStr,
+  void handleProteinFate(const AlternativeStructure &,
+			 Essex::CompositeNode *,
+			 const String refProtein,
+			 const String &altSeqStr,
 			 const GffTranscript *refTrans);
   int enumerateAlts(Essex::CompositeNode *altTransEssex,
 		    TranscriptSignals *signals,
@@ -102,13 +125,36 @@ private:
 		    const String &refProtein,
 		    const GffTranscript *refTrans,
 		    GffTranscript *altTrans,
-		    const String &xmlFilename,
 		    Essex::CompositeNode *root,
 		    ostream &osFBI);
+  void handleNoncoding(Essex::CompositeNode *status,
+		       const GffTranscript *refTrans,
+		       const GffTranscript *altTrans,
+		       const String &refSeqStr,
+		       const String &altSeqStr,
+		       const Sequence &refSeq,
+		       const Sequence &altSeq);
+  void handleCoding(Essex::CompositeNode *status,
+		    GffTranscript *refTrans,
+		    GffTranscript *altTrans,
+		    const String &refSeqStr,
+		    const String &altSeqStr,
+		    const Sequence &refSeq,
+		    const Sequence &altSeq,
+		    ProjectionChecker &checker,
+		    const Labeling &projectedLab);
+  void initEssex(GffTranscript *refTrans,
+		 int refSeqLen,
+		 ostream &osFBI,
+		 Essex::CompositeNode *status,
+		 const CommandLine &);
 };
 
 
 
+/****************************************************************
+ main()
+ ****************************************************************/
 int main(int argc,char *argv[])
   {
     try
@@ -137,18 +183,24 @@ int main(int argc,char *argv[])
 
 
 
+/****************************************************************
+ FBI constructor
+ ****************************************************************/
 FBI::FBI()
   : warningsRegex("/warnings=(\\d+)"), errorsRegex("/errors=(\\d+)"), 
     VCFwarnings(0), VCFerrors(0), startCodonMsg(NULL), substMatrix(NULL),
     variantRegex("(\\S+):(\\S+):(\\d+):(\\d+):([^:]*):([^:]*)"),
     coordRegex("/coord=(\\S+)"), orfAnalyzer(NULL),
     alignment(NULL), revAlignment(NULL)
-  {
-    // ctor
-  }
+{
+  alphabet=DnaAlphabet::global();
+}
 
 
 
+/****************************************************************
+ FBI destructor
+ ****************************************************************/
 FBI::~FBI()
 {
   delete substMatrix;
@@ -160,6 +212,9 @@ FBI::~FBI()
 
 
 
+/****************************************************************
+ FBI::main()
+ ****************************************************************/
 int FBI::main(int argc,char *argv[])
 {
   // Process command line
@@ -180,11 +235,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   const String altFasta=cmd.arg(3);
   const String outGff=cmd.arg(4);
   const String outFBI=cmd.arg(5);
-  alphabet=DnaAlphabet::global();
-  if(cmd.option('l')) labelingFile=cmd.optParm('l');
-  if(cmd.option('x')) xmlFilename=cmd.optParm('x');
-  reverseStrand=cmd.option('c');
-  quiet=cmd.option('q');
+  commandLineOpts(cmd);
 
   // Read some data from files
   processConfig(configFile);
@@ -196,38 +247,9 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   String refProtein=refTrans->getProtein();
 
   // Set up to generate structured output in Essex/XML
-  String transcriptID=refTrans->getTranscriptId();
-  String geneID=refTrans->getGeneId();
-  root=new Essex::CompositeNode("report");
-  append(root,"substrate",substrate);
-  if(!globalCoord.empty()) append(root,"global-coords",globalCoord);
-  append(root,"transcript-ID",transcriptID);
-  append(root,"gene-ID",geneID);
-  append(root,"vcf-warnings",VCFwarnings);
-  append(root,"vcf-errors",VCFerrors);
-  append(root,"alignment",CIGAR);
-  //append(root,"defline",altDefline);
-  Essex::CompositeNode *essexVariants=makeEssexVariants();
-  root->append(essexVariants);
-  refTrans->computePhases();
-  if(reverseStrand) refTrans->reverseComplement(refSeqLen);
-  Essex::CompositeNode *refTransEssex=refTrans->toEssex();
-  refTransEssex->getTag()="reference-transcript";
-  VariantClassifier classifier(variants,VariantClassifier::REF,*refTrans);
-  refTransEssex->append(classifier.makeVariantsNode());
-  root->append(refTransEssex);
-  Essex::CompositeNode *status=new Essex::CompositeNode("status");
-  root->appendChild(status);
   ofstream osFBI(outFBI.c_str());
-  if(cmd.option('e') && VCFerrors>cmd.optParm('e').asInt()) {
-    status->append("too-many-vcf-errors");
-    if(!quiet) {
-      if(!xmlFilename.empty()) writeXML();
-      osFBI<<*root<<endl;
-      osFBI<<"#===========================================================\n";
-    }
-    return -1;
-  }
+  Essex::CompositeNode *status=new Essex::CompositeNode("status");
+  initEssex(refTrans,refSeqLen,osFBI,status,cmd);
   
   // Check that the reference gene is well-formed
   bool noStart, noStop, PTC, badSpliceSite, referenceIsOK=true;
@@ -288,7 +310,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
     // Enumerate alternative structures
     if(signals->anyBroken()) 
       return enumerateAlts(altTransEssex,signals,status,altSeqStr,altSeqLen,
-			   refProtein,refTrans,altTrans,xmlFilename,root,
+			   refProtein,refTrans,altTrans,root,
 			   osFBI);
 
     // Otherwise, projection was successful
@@ -296,91 +318,12 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
     mapped=true;
 
     // Translate to proteins
-    if(refTrans->isCoding()) {
-      int oldOrfLen, newOrfLen; float oldStartScore, newStartScore;
-      Essex::CompositeNode *upstreamStart=
-	orfAnalyzer->earlierStartCodon(*refTrans,refSeqStr,refSeq,
-				       *altTrans,altSeqStr,altSeq,
-				       *revAlignment,oldOrfLen,newOrfLen,
-				       oldStartScore,newStartScore);
-      if(upstreamStart) {
-	Essex::CompositeNode *changeNode=
-	  new Essex::CompositeNode("new-upstream-start-codon");
-	changeNode->append("new-start-codon-score",newStartScore);
-	changeNode->append("old-start-codon-score",oldStartScore);
-	Essex::CompositeNode *lengthNode=
-	  new Essex::CompositeNode("ORF-length");
-	lengthNode->append(oldOrfLen);
-	lengthNode->append("=>");
-	lengthNode->append(newOrfLen);
-	changeNode->append(lengthNode);
-	changeNode->append(upstreamStart);
-	status->append(changeNode);
-      }
-
-      String refProtein, altProtein;
-      checker.translate(*refTrans,*altTrans,refProtein,altProtein);
-      
-      int ejcDistance;
-      switch(nmd.predict(*altTrans,altSeqStr,ejcDistance)) {
-      case NMD_NONE: break;
-      case NMD_NMD: {
-	//status->append("premature-stop","NMD"); break;
-	Essex::CompositeNode *stopNode=
-	  new Essex::CompositeNode("premature-stop");
-	stopNode->append("NMD");
-	stopNode->append("EJC-distance",ejcDistance);
-	status->append(stopNode);
-      } break;
-      case NMD_TRUNCATION:  { // ### this is disabled for now
-	int matches, len;
-	alignProteins(refProtein,altProtein,matches);
-	Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
-	fate->append("protein-truncation");
-	percentMatch(matches,refProtein.length(),altProtein.length(),fate);
-	status->append(fate);
-      }
-	break;
-      case NMD_NO_STOP: 
-	if(refTrans->hasUTR3()) status->append("nonstop-decay");
-	break;
-      case NMD_NO_START: status->append("no-start-codon"); break;
-      }
-
-      // Check for start codon
-      if(startCodonMsg) status->append(startCodonMsg);
-      
-      // Check for frameshifts
-      if(refProtein!=altProtein) {
-	int matches, len;
-	alignProteins(refProtein,altProtein,matches);
-	Essex::CompositeNode *fate=new Essex::CompositeNode("protein-differs");
-	percentMatch(matches,refProtein.length(),altProtein.length(),fate);
-	status->append(fate);
-	Labeling altLab(altSeqLen);
-	computeLabeling(*altTrans,altLab);
-	checker.checkFrameshifts(projectedLab,altLab,status);
-      }
-    }
-    else { // ref gene is noncoding
-      if(!quiet) status->append("noncoding");
-      int refOrfLen, altOrfLen;
-      Essex::CompositeNode *codingTranscript=
-	orfAnalyzer->noncodingToCoding(*refTrans,refSeqStr,refSeq,*altTrans,
-				       altSeqStr,altSeq,refOrfLen,altOrfLen);
-      if(codingTranscript) {
-	Essex::CompositeNode *changeNode=
-	  new Essex::CompositeNode("noncoding-to-coding");
-	Essex::CompositeNode *lengthNode=
-	  new Essex::CompositeNode("ORF-length");
-	lengthNode->append(refOrfLen);
-	lengthNode->append("=>");
-	lengthNode->append(altOrfLen);
-	changeNode->append(lengthNode);
-	changeNode->append(codingTranscript);
-	status->append(changeNode);
-      }
-    }
+    if(refTrans->isCoding()) 
+      handleCoding(status,refTrans,altTrans,refSeqStr,altSeqStr,refSeq,
+		   altSeq,checker,projectedLab);
+    else  // ref gene is noncoding
+      handleNoncoding(status,refTrans,altTrans,refSeqStr,altSeqStr,
+		      refSeq,altSeq);
     delete altTrans;
   }
 
@@ -394,6 +337,162 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 
 
 
+/****************************************************************
+ FBI::initEssex()
+ ****************************************************************/
+void FBI::initEssex(GffTranscript *refTrans,int refSeqLen,ostream &osFBI,
+		    Essex::CompositeNode *status,const CommandLine &cmd)
+{
+  String transcriptID=refTrans->getTranscriptId();
+  String geneID=refTrans->getGeneId();
+  root=new Essex::CompositeNode("report");
+  append(root,"substrate",substrate);
+  if(!globalCoord.empty()) append(root,"global-coords",globalCoord);
+  append(root,"transcript-ID",transcriptID);
+  append(root,"gene-ID",geneID);
+  append(root,"vcf-warnings",VCFwarnings);
+  append(root,"vcf-errors",VCFerrors);
+  append(root,"alignment",CIGAR);
+  //append(root,"defline",altDefline);
+  Essex::CompositeNode *essexVariants=makeEssexVariants();
+  root->append(essexVariants);
+  refTrans->computePhases();
+  if(reverseStrand) refTrans->reverseComplement(refSeqLen);
+  Essex::CompositeNode *refTransEssex=refTrans->toEssex();
+  refTransEssex->getTag()="reference-transcript";
+  VariantClassifier classifier(variants,VariantClassifier::REF,*refTrans);
+  refTransEssex->append(classifier.makeVariantsNode());
+  root->append(refTransEssex);
+  root->appendChild(status);
+  if(cmd.option('e') && VCFerrors>cmd.optParm('e').asInt()) {
+    status->append("too-many-vcf-errors");
+    if(!quiet) {
+      if(!xmlFilename.empty()) writeXML();
+      osFBI<<*root<<endl;
+      osFBI<<"#===========================================================\n";
+    }
+    return -1;
+  }
+}
+
+
+
+/****************************************************************
+ FBI::handleCoding()
+ ****************************************************************/
+void FBI::handleCoding(Essex::CompositeNode *status,
+		       GffTranscript *refTrans,
+		       GffTranscript *altTrans,
+		       const String &refSeqStr,
+		       const String &altSeqStr,
+		       const Sequence &refSeq,
+		       const Sequence &altSeq,
+		       ProjectionChecker &checker,
+		       const Labeling &projectedLab)
+{
+  int oldOrfLen, newOrfLen; float oldStartScore, newStartScore;
+  Essex::CompositeNode *upstreamStart=
+    orfAnalyzer->earlierStartCodon(*refTrans,refSeqStr,refSeq,
+				   *altTrans,altSeqStr,altSeq,
+				   *revAlignment,oldOrfLen,newOrfLen,
+				   oldStartScore,newStartScore);
+  if(upstreamStart) {
+    Essex::CompositeNode *changeNode=
+      new Essex::CompositeNode("new-upstream-start-codon");
+    changeNode->append("new-start-codon-score",newStartScore);
+    changeNode->append("old-start-codon-score",oldStartScore);
+    Essex::CompositeNode *lengthNode=
+      new Essex::CompositeNode("ORF-length");
+    lengthNode->append(oldOrfLen);
+    lengthNode->append("=>");
+    lengthNode->append(newOrfLen);
+    changeNode->append(lengthNode);
+    changeNode->append(upstreamStart);
+    status->append(changeNode);
+  }
+  
+  String refProtein, altProtein;
+  checker.translate(*refTrans,*altTrans,refProtein,altProtein);
+  
+  int ejcDistance;
+  switch(nmd.predict(*altTrans,altSeqStr,ejcDistance)) {
+  case NMD_NONE: break;
+  case NMD_NMD: {
+    //status->append("premature-stop","NMD"); break;
+    Essex::CompositeNode *stopNode=
+      new Essex::CompositeNode("premature-stop");
+    stopNode->append("NMD");
+    stopNode->append("EJC-distance",ejcDistance);
+    status->append(stopNode);
+  } break;
+  case NMD_TRUNCATION:  { // ### this is disabled for now
+    int matches, len;
+    alignProteins(refProtein,altProtein,matches);
+    Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
+    fate->append("protein-truncation");
+    percentMatch(matches,refProtein.length(),altProtein.length(),fate);
+    status->append(fate);
+  }
+    break;
+  case NMD_NO_STOP: 
+    if(refTrans->hasUTR3()) status->append("nonstop-decay");
+    break;
+  case NMD_NO_START: status->append("no-start-codon"); break;
+  }
+  
+  // Check for start codon
+  if(startCodonMsg) status->append(startCodonMsg);
+  
+  // Check for frameshifts
+  if(refProtein!=altProtein) {
+    int matches, len;
+    alignProteins(refProtein,altProtein,matches);
+    Essex::CompositeNode *fate=new Essex::CompositeNode("protein-differs");
+    percentMatch(matches,refProtein.length(),altProtein.length(),fate);
+    status->append(fate);
+    Labeling altLab(altSeqLen);
+    computeLabeling(*altTrans,altLab);
+    checker.checkFrameshifts(projectedLab,altLab,status);
+  }
+}
+
+
+
+/****************************************************************
+ FBI::handleNoncoding()
+ ****************************************************************/
+void FBI::handleNoncoding(Essex::CompositeNode *status,
+			  const GffTranscript *refTrans,
+			  const GffTranscript *altTrans,
+			  const String &refSeqStr,
+			  const String &altSeqStr,
+			  const Sequence &refSeq,
+			  const Sequence &altSeq)
+{
+  if(!quiet) status->append("noncoding");
+  int refOrfLen, altOrfLen;
+  Essex::CompositeNode *codingTranscript=
+    orfAnalyzer->noncodingToCoding(*refTrans,refSeqStr,refSeq,*altTrans,
+				   altSeqStr,altSeq,refOrfLen,altOrfLen);
+  if(codingTranscript) {
+    Essex::CompositeNode *changeNode=
+      new Essex::CompositeNode("noncoding-to-coding");
+    Essex::CompositeNode *lengthNode=
+      new Essex::CompositeNode("ORF-length");
+    lengthNode->append(refOrfLen);
+    lengthNode->append("=>");
+    lengthNode->append(altOrfLen);
+    changeNode->append(lengthNode);
+    changeNode->append(codingTranscript);
+    status->append(changeNode);
+  }
+}
+
+
+
+/****************************************************************
+ FBI::enumerateAlts
+ ****************************************************************/
 int FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
 		       TranscriptSignals *signals,
 		       Essex::CompositeNode *status,
@@ -402,7 +501,6 @@ int FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
 		       const String &refProtein,
 		       const GffTranscript *refTrans,
 		       GffTranscript *altTrans,
-		       const String &xmlFilename,
 		       Essex::CompositeNode *root,
 		       ostream &osFBI)
 {
@@ -461,6 +559,9 @@ int FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
 
 
 
+/****************************************************************
+ FBI::handleProteinFate
+ ****************************************************************/
 void FBI::handleProteinFate(const AlternativeStructure &s,
 			    Essex::CompositeNode *node,
 			    const String refProtein,
@@ -513,6 +614,9 @@ void FBI::handleProteinFate(const AlternativeStructure &s,
 
 
 
+/****************************************************************
+ FBI::appendBrokenSignals
+ ****************************************************************/
 void FBI::appendBrokenSignals(const TranscriptSignals *signals,
 				      Essex::CompositeNode *status)
 {
@@ -546,6 +650,9 @@ void FBI::appendBrokenSignals(const TranscriptSignals *signals,
 
 
 
+/****************************************************************
+ FBI::writeXML()
+ ****************************************************************/
 void FBI::writeXML()
 {
   ofstream os(xmlFilename.c_str());
@@ -555,6 +662,9 @@ void FBI::writeXML()
 
 
 
+/****************************************************************
+ FBI::append()
+ ****************************************************************/
 void FBI::append(Essex::CompositeNode *root,const String &tag,
 			 const String &message)
 {
@@ -565,6 +675,9 @@ void FBI::append(Essex::CompositeNode *root,const String &tag,
 
 
 
+/****************************************************************
+ FBI::append()
+ ****************************************************************/
 void FBI::append(Essex::CompositeNode *root,const char *tag,
 			 const char *message)
 {
@@ -573,6 +686,9 @@ void FBI::append(Essex::CompositeNode *root,const char *tag,
 
 
 
+/****************************************************************
+ FBI::append()
+ ****************************************************************/
 void FBI::append(Essex::CompositeNode *root,const char *tag,int x)
 {
   Essex::CompositeNode *node=new Essex::CompositeNode(tag);
@@ -582,6 +698,9 @@ void FBI::append(Essex::CompositeNode *root,const char *tag,int x)
 
 
 
+/****************************************************************
+ FBI::append()
+ ****************************************************************/
 void FBI::append(Essex::CompositeNode *root,const char *tag,
 			const String &message)
 {
@@ -590,6 +709,9 @@ void FBI::append(Essex::CompositeNode *root,const char *tag,
 
 
 
+/****************************************************************
+ FBI::computeLabeling()
+ ****************************************************************/
 void FBI::computeLabeling(GffTranscript &transcript,
 				  Labeling &refLab)
 {
@@ -617,6 +739,9 @@ void FBI::computeLabeling(GffTranscript &transcript,
 
 
 
+/****************************************************************
+ FBI::mapLabeling()
+ ****************************************************************/
 void FBI::mapLabeling(Labeling &from,Labeling &to,
 			      const CigarString &cigar)
 {
@@ -633,6 +758,9 @@ void FBI::mapLabeling(Labeling &from,Labeling &to,
 
 
 
+/****************************************************************
+ FBI::mapExon()
+ ****************************************************************/
 bool FBI::mapExon(GffExon &exon,CigarAlignment &align)
 {
   int begin=exon.getBegin(), end=exon.getEnd();
@@ -648,6 +776,9 @@ bool FBI::mapExon(GffExon &exon,CigarAlignment &align)
 
 
 
+/****************************************************************
+ FBI::mapTranscript()
+ ****************************************************************/
 void FBI::mapTranscript(GffTranscript &refTrans,
 				const CigarString &cigar,
 				const String &outfile,
@@ -697,6 +828,9 @@ void FBI::mapTranscript(GffTranscript &refTrans,
 
 
 
+/****************************************************************
+ FBI::loadSeq()
+ ****************************************************************/
 String FBI::loadSeq(const String &filename)
 {
   FastaReader reader(filename);
@@ -707,6 +841,9 @@ String FBI::loadSeq(const String &filename)
 
 
 
+/****************************************************************
+ FBI::loadSeq()
+ ****************************************************************/
 String FBI::loadSeq(const String &filename,String &CIGAR)
 {
   FastaReader reader(filename);
@@ -729,6 +866,9 @@ String FBI::loadSeq(const String &filename,String &CIGAR)
 
 
 
+/****************************************************************
+ FBI::loadGff()
+ ****************************************************************/
 GffTranscript *FBI::loadGff(const String &filename)
 {
   GffReader reader(filename);
@@ -745,6 +885,9 @@ GffTranscript *FBI::loadGff(const String &filename)
 
 
 
+/****************************************************************
+ FBI::writeProtein()
+ ****************************************************************/
 void FBI::writeProtein(const String &def,const String &protein,
 			       const String &filename)
 {
@@ -754,6 +897,9 @@ void FBI::writeProtein(const String &def,const String &protein,
 
 
 
+/****************************************************************
+ FBI::processConfig()
+ ****************************************************************/
 void FBI::processConfig(const String &filename)
 {
   const String path=File::getPath(filename);
@@ -801,6 +947,9 @@ void FBI::processConfig(const String &filename)
 
 
 
+/****************************************************************
+ FBI::parseConsensusList()
+ ****************************************************************/
 void FBI::parseConsensusList(const String &tag,ConfigFile &config,
 				     Set<String> &into)
 {
@@ -814,6 +963,9 @@ void FBI::parseConsensusList(const String &tag,ConfigFile &config,
 
 
 
+/****************************************************************
+ FBI::loadModel()
+ ****************************************************************/
 SignalSensor *FBI::loadModel(const String &label,ConfigFile &config)
 {
   String filename=config.lookupOrDie(label);
@@ -822,6 +974,9 @@ SignalSensor *FBI::loadModel(const String &label,ConfigFile &config)
 
 
 
+/****************************************************************
+ FBI::alignProteins()
+ ****************************************************************/
 float FBI::alignProteins(const String &refStr,const String &altStr,
 			 int &matches)
 {
@@ -839,6 +994,9 @@ float FBI::alignProteins(const String &refStr,const String &altStr,
 
 
 
+/****************************************************************
+ FBI::percentMatch()
+ ****************************************************************/
 void FBI::percentMatch(int matches,int refLen,int altLen,
 		       Essex::CompositeNode *parent)
 {
@@ -853,6 +1011,9 @@ void FBI::percentMatch(int matches,int refLen,int altLen,
 
 
 
+/****************************************************************
+ FBI::parseVariants()
+ ****************************************************************/
 void FBI::parseVariants(const String &s,Vector<Variant> &variants,int L)
 {
   Vector<String> fields;
@@ -875,6 +1036,9 @@ void FBI::parseVariants(const String &s,Vector<Variant> &variants,int L)
 
 
 
+/****************************************************************
+ FBI::makeEssexVariants()
+ ****************************************************************/
 Essex::CompositeNode *FBI::makeEssexVariants()
 {
   Essex::CompositeNode *parent=new Essex::CompositeNode("variants");
@@ -890,3 +1054,10 @@ Essex::CompositeNode *FBI::makeEssexVariants()
 
 
 
+void FBI::commandLineOpts(const CommandLine &cmd)
+{
+  if(cmd.option('l')) labelingFile=cmd.optParm('l');
+  if(cmd.option('x')) xmlFilename=cmd.optParm('x');
+  reverseStrand=cmd.option('c');
+  quiet=cmd.option('q');
+}
