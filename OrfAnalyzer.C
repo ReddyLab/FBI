@@ -125,18 +125,13 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
     refCopy.loadSequence(refStr);
     String refRNA=refCopy.getFullSequence();
     const int begin=refLocalStart-offset;
-    if(begin<0) change=true;
+    if(begin<0 || !sensor->consensusOccursAt(refStr,refLocalStart))
+      change=true;
     else {
       float refScore=sensor->getLogP(refSeq,refStr,begin);
       if(refScore<sensor->getCutoff()) change=true;
     }
   }
-
-  // Check whether the reading frame has changed
-  int refBegin, refEnd;
-  refTrans.getCDSbeginEnd(refBegin,refEnd);
-  const int localRefBegin=refTrans.mapToTranscriptCoords(refBegin);
-  if((localRefBegin-refLocalStart)%3==0) change=true;
 
   // Compute oldStartCodonScore 
   const int altLocal=altTrans.mapToTranscriptCoords(oldBegin);
@@ -145,6 +140,16 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   String altRNA=altCopy.getFullSequence();
   oldStartCodonScore=sensor->getLogP(altSeq,altStr,altLocal-offset);
   
+  // Check whether the reading frame has changed
+  int refBegin, refEnd;
+  refTrans.getCDSbeginEnd(refBegin,refEnd);
+  const int localRefBegin=refTrans.mapToTranscriptCoords(refBegin);
+  int oldFrame=(localRefBegin-refLocalStart)%3;
+  const int oldLocal=altTrans.mapToTranscriptCoords(oldBegin);
+  const int newLocal=altTrans.mapToTranscriptCoords(altGenomicStart);
+  int newFrame=(oldLocal-newLocal)%3;
+  if(newFrame!=oldFrame) change=true;
+
   // Report results
   Essex::CompositeNode *altEssex=change ? altORF->toEssex() : NULL;
   delete altORF;
