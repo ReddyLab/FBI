@@ -148,7 +148,8 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   const int oldLocal=altTrans.mapToTranscriptCoords(oldBegin);
   const int newLocal=altTrans.mapToTranscriptCoords(altGenomicStart);
   int newFrame=(oldLocal-newLocal)%3;
-  if(newFrame!=oldFrame) change=true;
+  if(newFrame==0 && oldFrame!=0 ||
+     newFrame!=0 && oldFrame==0) change=true;
 
   // Report results
   Essex::CompositeNode *altEssex=change ? altORF->toEssex() : NULL;
