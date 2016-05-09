@@ -104,23 +104,28 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   /* Requirements: either the new start codon didn't exist in the reference,
      or it had a much weaker score, or it was in a different reading frame.
    */
+
+  // See if there is an upstream start codon
   int altGenomicStart;
   GffTranscript *altORF=findORF(altTrans,altStr,altSeq,newStartCodonScore,
 				altGenomicStart,newOrfLen);
+  oldOrfLen=altTrans.getCDSlength();
   int oldBegin, oldEnd;
   altTrans.getCDSbeginEnd(oldBegin,oldEnd);
   if(altGenomicStart>=oldBegin) { delete altORF; return NULL; }
 
-  // Check that the start codon was in exonic sequence in the ref
+  // If that upstream start codon was previously intronic, it's a good bet
+  // that this is a functional change
   const int refGenomicStart=altToRef.mapApproximate(altGenomicStart,DIR_RIGHT);
   const int refLocalStart=refTrans.mapToTranscriptCoords(refGenomicStart);
-  bool change=refLocalStart<0;
+  bool change=refLocalStart<0; // -1 means unmapped due to being intronic
 
-  // Score the old start codon
+  // If this start codon existed but had a poor score in the reference,
+  // it may indeed indicate a functional change
   SignalSensor *sensor=sensors.startCodonSensor;
   const int offset=sensor->getConsensusOffset();
   const int windowLen=sensor->getContextWindowLength();
-  if(refLocalStart>=0) {
+  if(refLocalStart>=0) { // it was exonic in the ref annotation
     GffTranscript refCopy(refTrans);
     refCopy.loadSequence(refStr);
     String refRNA=refCopy.getFullSequence();
@@ -140,7 +145,8 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   String altRNA=altCopy.getFullSequence();
   oldStartCodonScore=sensor->getLogP(altSeq,altStr,altLocal-offset);
   
-  // Check whether the reading frame has changed
+  // If the start codon existed previously but was in a different frame,
+  // it's again worth reporting as possibly impacting function
   int refBegin, refEnd;
   refTrans.getCDSbeginEnd(refBegin,refEnd);
   const int localRefBegin=refTrans.mapToTranscriptCoords(refBegin);
@@ -148,8 +154,8 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   const int oldLocal=altTrans.mapToTranscriptCoords(oldBegin);
   const int newLocal=altTrans.mapToTranscriptCoords(altGenomicStart);
   int newFrame=(oldLocal-newLocal)%3;
-  if(newFrame==0 && oldFrame!=0 ||
-     newFrame!=0 && oldFrame==0) change=true;
+  if(newFrame==0 && oldFrame!=0) change=true;
+  //if(newFrame!=0 && oldFrame==0) change=true;
 
   // Report results
   Essex::CompositeNode *altEssex=change ? altORF->toEssex() : NULL;
