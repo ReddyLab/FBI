@@ -112,6 +112,18 @@ private:
 		     Vector<Variant> &,
 		     int substrateLen);
   Essex::CompositeNode *makeEssexVariants();
+  void checkProjection(const String &outGff,
+		       GffTranscript *refTrans,
+		       bool &mapped,
+		       const String &refSeqStr,
+		       const String &altSeqStr,
+		       const Sequence &refSeq,
+		       const Sequence &altSeq,
+		       const Labeling &projectedLab,
+		       int altSeqLen,
+		       Essex::CompositeNode *status,
+		       ostream &osFBI,
+		       const String &refProtein);
   void handleProteinFate(const AlternativeStructure &,
 			 Essex::CompositeNode *,
 			 const String refProtein,
@@ -285,54 +297,69 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 
   // Check the projection to see if the gene might be broken
   bool mapped=false;
-  if(referenceIsOK) {
-    GffTranscript *altTrans=loadGff(outGff);
-    altTrans->loadSequence(altSeqStr);
-    altTrans->computePhases();
-    if(reverseStrand) altTrans->reverseComplement(altSeqLen);
-    Essex::CompositeNode *altTransEssex=altTrans->toEssex();
-    altTransEssex->getTag()="mapped-transcript";
-    VariantClassifier classifier(variants,VariantClassifier::ALT,*altTrans);
-    altTransEssex->append(classifier.makeVariantsNode());
-    root->append(altTransEssex);
-    ProjectionChecker checker(*refTrans,*altTrans,refSeqStr,refSeq,
-			      altSeqStr,altSeq,projectedLab,sensors);
-    TranscriptSignals *signals=checker.findBrokenSpliceSites();
-    if(!signals) {
-      status->prepend("unequal-numbers-of-exons");
-      if(!xmlFilename.empty()) writeXML();
-      osFBI<<*root<<endl;
-      osFBI<<"#===========================================================\n";
-      delete altTrans;
-      return -1;
-    }
+  if(referenceIsOK) 
+    checkProjection(outGff,refTrans,mapped,refSeqStr,altSeqStr,refSeq,
+		    altSeq,projectedLab,altSeqLen,status,osFBI,refProtein);
 
-    // Enumerate alternative structures
-    if(signals->anyBroken()) 
-      return enumerateAlts(altTransEssex,signals,status,altSeqStr,altSeqLen,
-			   refProtein,refTrans,altTrans,root,
-			   osFBI);
-
-    // Otherwise, projection was successful
-    status->prepend("mapped");
-    mapped=true;
-
-    // Translate to proteins
-    if(refTrans->isCoding()) 
-      handleCoding(status,refTrans,altTrans,refSeqStr,altSeqStr,refSeq,
-		   altSeq,checker,projectedLab);
-    else  // ref gene is noncoding
-      handleNoncoding(status,refTrans,altTrans,refSeqStr,altSeqStr,
-		      refSeq,altSeq);
-    delete altTrans;
-  }
-
-  // Flush output>
+  // Flush output
   if(mapped && status && status->getNumChildren()<2 && quiet) return 0;
   if(!xmlFilename.empty()) writeXML();
   osFBI<<*root<<endl;
   osFBI<<"#===========================================================\n";
   return 0;
+}
+
+
+
+/****************************************************************
+ FBI::checkProjection()
+ ****************************************************************/
+void FBI::checkProjection(const String &outGff,GffTranscript *refTrans,
+			  bool &mapped,const String &refSeqStr,
+			  const String &altSeqStr,const Sequence &refSeq,
+			  const Sequence &altSeq,const Labeling &projectedLab,
+			  int altSeqLen,Essex::CompositeNode *status,
+			  ostream &osFBI,const String &refProtein)
+{
+  GffTranscript *altTrans=loadGff(outGff);
+  altTrans->loadSequence(altSeqStr);
+  altTrans->computePhases();
+  if(reverseStrand) altTrans->reverseComplement(altSeqLen);
+  Essex::CompositeNode *altTransEssex=altTrans->toEssex();
+  altTransEssex->getTag()="mapped-transcript";
+  VariantClassifier classifier(variants,VariantClassifier::ALT,*altTrans);
+  altTransEssex->append(classifier.makeVariantsNode());
+  root->append(altTransEssex);
+  ProjectionChecker checker(*refTrans,*altTrans,refSeqStr,refSeq,
+			    altSeqStr,altSeq,projectedLab,sensors);
+  TranscriptSignals *signals=checker.findBrokenSpliceSites();
+  if(!signals) {
+    status->prepend("unequal-numbers-of-exons");
+    if(!xmlFilename.empty()) writeXML();
+    osFBI<<*root<<endl;
+    osFBI<<"#===========================================================\n";
+    delete altTrans;
+    return -1;
+  }
+  
+  // Enumerate alternative structures
+  if(signals->anyBroken()) 
+    return enumerateAlts(altTransEssex,signals,status,altSeqStr,altSeqLen,
+			 refProtein,refTrans,altTrans,root,
+			 osFBI);
+
+  // Otherwise, projection was successful
+  status->prepend("mapped");
+  mapped=true;
+
+  // Translate to proteins
+  if(refTrans->isCoding()) 
+    handleCoding(status,refTrans,altTrans,refSeqStr,altSeqStr,refSeq,
+		 altSeq,checker,projectedLab);
+  else  // ref gene is noncoding
+    handleNoncoding(status,refTrans,altTrans,refSeqStr,altSeqStr,
+		    refSeq,altSeq);
+  delete altTrans;
 }
 
 
