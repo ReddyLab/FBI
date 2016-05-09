@@ -44,7 +44,9 @@ public:
 					  int &refOrfLen,
 					  int &altOrfLen,
 					  float &oldStartCodonScore,
-					  float &newStartCodonScore);
+					  float &newStartCodonScore,
+					  bool reverseStrand,
+					  int altSeqLen);
 private:
   SignalSensors &sensors;
   const int MIN_ORF_LEN;

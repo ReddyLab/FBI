@@ -106,7 +106,9 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
 			       int &oldOrfLen,
 			       int &newOrfLen,
 			       float &oldStartCodonScore,
-			       float &newStartCodonScore)
+			       float &newStartCodonScore,
+			       bool reverseStrand,
+			       int altSeqLen)
 {
   /* Requirements: either the new start codon didn't exist in the reference,
      or it had a much weaker score, or it was in a different reading frame.
@@ -163,6 +165,12 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   int newFrame=(oldLocal-newLocal)%3;
   if(newFrame==0 && oldFrame!=0) change=true;
   //if(newFrame!=0 && oldFrame==0) change=true;
+
+  if(change) {
+    altORF->computePhases();
+    altORF->loadSequence(altStr);
+    if(reverseStrand) altORF->reverseComplement(altSeqLen);
+  }
 
   // Report results
   Essex::CompositeNode *altEssex=change ? altORF->toEssex() : NULL;

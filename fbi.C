@@ -445,7 +445,8 @@ void FBI::handleCoding(GffTranscript *altTrans,
     orfAnalyzer->earlierStartCodon(*refTrans,refSeqStr,refSeq,
 				   *altTrans,altSeqStr,altSeq,
 				   *revAlignment,oldOrfLen,newOrfLen,
-				   oldStartScore,newStartScore);
+				   oldStartScore,newStartScore,
+				   reverseStrand,altSeqLen);
   if(upstreamStart) {
     Essex::CompositeNode *changeNode=
       new Essex::CompositeNode("new-upstream-start-codon");
@@ -580,25 +581,46 @@ void FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
 void FBI::processAltStructure(AlternativeStructure &s,
 			      Essex::CompositeNode *altStructNode)
 {
-  Essex::CompositeNode *msg=s.msg, *gainOfCoding=NULL, *codingTranscript=NULL;
-  if(!refTrans->isCoding()) {
+  Essex::CompositeNode *msg=s.msg, *msg2=NULL, *changeToCoding=NULL;
+  if(refTrans->isCoding()) { // see if a new start coding extends the ORF
+    int oldOrfLen, newOrfLen; float oldStartScore, newStartScore;
+    changeToCoding=
+      orfAnalyzer->earlierStartCodon(*refTrans,refSeqStr,refSeq,
+				     *s.transcript,altSeqStr,altSeq,
+				     *revAlignment,oldOrfLen,newOrfLen,
+				     oldStartScore,newStartScore,
+				     reverseStrand,altSeqLen);
+    if(changeToCoding) {
+      msg2=
+	new Essex::CompositeNode("new-upstream-start-codon");
+      msg2->append("new-start-codon-score",newStartScore);
+      msg2->append("old-start-codon-score",oldStartScore);
+      Essex::CompositeNode *lengthNode=
+	new Essex::CompositeNode("ORF-length");
+      lengthNode->append(oldOrfLen);
+      lengthNode->append("=>");
+      lengthNode->append(newOrfLen);
+      msg2->append(lengthNode);
+    }
+  }
+  else { // noncoding: check whether it changes to coding
     int refOrfLen, altOrfLen;
-    codingTranscript=
+    changeToCoding=
       orfAnalyzer->noncodingToCoding(*refTrans,refSeqStr,refSeq,*s.transcript,
 				     altSeqStr,altSeq,refOrfLen,altOrfLen,
 				     reverseStrand,altSeqLen);
-    if(codingTranscript) {
-      gainOfCoding=new Essex::CompositeNode("noncoding-to-coding");
+    if(changeToCoding) {
+      msg2=new Essex::CompositeNode("noncoding-to-coding");
       Essex::CompositeNode *lengthNode=
 	new Essex::CompositeNode("ORF-length");
       lengthNode->append(refOrfLen);
       lengthNode->append("=>");
       lengthNode->append(altOrfLen);
-      gainOfCoding->append(lengthNode);
+      msg2->append(lengthNode);
     }
   }
   Essex::CompositeNode *node=NULL;
-  if(codingTranscript) node=codingTranscript;
+  if(changeToCoding) node=changeToCoding;
   else {
     s.transcript->loadSequence(altSeqStr);
     s.transcript->computePhases();
@@ -609,7 +631,7 @@ void FBI::processAltStructure(AlternativeStructure &s,
 			       *s.transcript);
   node->append(classifier.makeVariantsNode());
   s.reportCrypticSites(node,reverseStrand,altSeqLen);
-  listStructureChanges(s,node,msg,gainOfCoding);
+  listStructureChanges(s,node,msg,msg2);
   if(msg) status->append(msg);
   altStructNode->append(node);
   handleProteinFate(s,node);
@@ -623,7 +645,7 @@ void FBI::processAltStructure(AlternativeStructure &s,
 void FBI::listStructureChanges(const AlternativeStructure &s,
 			       Essex::CompositeNode *node,
 			       Essex::CompositeNode *&msg,
-			       Essex::CompositeNode *gainOfCoding)
+			       Essex::CompositeNode *msg2)
 {
   if(s.structureChange.anyChange()) {
     Essex::CompositeNode *changeNode=
@@ -636,7 +658,7 @@ void FBI::listStructureChanges(const AlternativeStructure &s,
     if(s.structureChange.intronRetention) 
       changeNode->append("intron-retention");
     if(msg) { changeNode->append(msg); msg=NULL; }
-    if(gainOfCoding) changeNode->append(gainOfCoding);
+    if(msg2) changeNode->append(msg2);
   }
 }
 
