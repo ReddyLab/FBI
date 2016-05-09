@@ -91,7 +91,7 @@ private:
   String loadSeq(const String &filename);
   String loadSeq(const String &filename,String &cigar);
   void computeLabeling(GffTranscript &,Labeling &);
-  void mapLabeling(Labeling &from,Labeling &to);
+  void mapLabeling(Labeling &from,Labeling &to,const String &filename);
   void mapTranscript(const String &outfile);
   bool mapExon(GffExon &,CigarAlignment &);
   void writeProtein(const String &defline,
@@ -198,16 +198,6 @@ int FBI::main(int argc,char *argv[])
 {
   // Process command line
   CommandLine cmd(argc,argv,"ce:l:qx:");
-  if(cmd.numArgs()!=6)
-    throw String("\n\
-fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
-     -c = sequence has been reversed, but cigar string has not\n\
-     -e N = abort if vcf errors >N\n\
-     -l <file> = emit a per-nucleotide labeling for the alt sequence\n\
-     -q = quiet (only report transcripts with mapping issues)\n\
-     -x <file> = also emit xml\n\
-  alt.fasta must have a cigar string: >ID ... /cigar=1045M3I10M7D4023M ...\n\
-\n");
   parseCommandLine(cmd);
 
   // Read some data from files
@@ -233,11 +223,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 
   // Generate labeling file
   Labeling projectedLab(altSeqLen);
-  mapLabeling(refLab,projectedLab);
-  if(!labelingFile.empty()) {
-    ofstream os(labelingFile.c_str());
-    os<<projectedLab;
-    os.close(); }
+  mapLabeling(refLab,projectedLab,labelingFile);
 
   // Check the projection to see if the gene might be broken
   bool mapped=false;
@@ -269,6 +255,16 @@ void FBI::flushOutput(ostream &osFBI,const bool &mapped)
  ****************************************************************/
 void FBI::parseCommandLine(const CommandLine &cmd)
 {
+  if(cmd.numArgs()!=6)
+    throw String("\n\
+fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
+     -c = sequence has been reversed, but cigar string has not\n\
+     -e N = abort if vcf errors >N\n\
+     -l <file> = emit a per-nucleotide labeling for the alt sequence\n\
+     -q = quiet (only report transcripts with mapping issues)\n\
+     -x <file> = also emit xml\n\
+  alt.fasta must have a cigar string: >ID ... /cigar=1045M3I10M7D4023M ...\n\
+\n");
   configFile=cmd.arg(0);
   refGffFile=cmd.arg(1);
   refFasta=cmd.arg(2);
@@ -759,7 +755,7 @@ void FBI::computeLabeling(GffTranscript &transcript,
 /****************************************************************
  FBI::mapLabeling()
  ****************************************************************/
-void FBI::mapLabeling(Labeling &from,Labeling &to)
+void FBI::mapLabeling(Labeling &from,Labeling &to,const String &filename)
 {
   CigarAlignment &align=*alignment;
   to.asArray().setAllTo(LABEL_NONE);
@@ -769,6 +765,11 @@ void FBI::mapLabeling(Labeling &from,Labeling &to)
     if(j!=CIGAR_UNDEFINED) to[j]=from[i];
   }
   delete &align;
+  if(!filename.empty()) {
+    ofstream os(filename.c_str());
+    os<<to;
+    os.close();
+  }
 }
 
 
