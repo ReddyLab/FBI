@@ -372,6 +372,14 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 
     // Translate to proteins
     if(refTrans->isCoding()) {
+      int oldOrfLen, newOrfLen; float oldStartScore, newStartScore;
+      Essex::CompositeNode *upstreamStart=
+	orfAnalyzer->earlierStartCodon(*refTrans,refSeqStr,refSeq,
+				       *altTrans,altSeqStr,altSeq,
+				       *revAlignment,oldOrfLen,newOrfLen,
+				       oldStartScore,newStartScore);
+      if(upstreamStart) status->append(upstreamStart);
+
       String refProtein, altProtein;
       checker.translate(*refTrans,*altTrans,refProtein,altProtein);
       
@@ -422,7 +430,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
       Essex::CompositeNode *codingTranscript=
 	orfAnalyzer->noncodingToCoding(*refTrans,refSeqStr,refSeq,*altTrans,
 				       altSeqStr,altSeq,refOrfLen,altOrfLen);
-    if(codingTranscript) {
+      if(codingTranscript) {
 	Essex::CompositeNode *changeNode=
 	  new Essex::CompositeNode("noncoding-to-coding");
 	Essex::CompositeNode *lengthNode=
@@ -430,6 +438,7 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 	lengthNode->append(refOrfLen);
 	lengthNode->append("=>");
 	lengthNode->append(altOrfLen);
+	changeNode->append(lengthNode);
 	changeNode->append(codingTranscript);
 	status->append(changeNode);
       }
