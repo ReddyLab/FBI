@@ -28,6 +28,7 @@
 #include "NMD.H"
 #include "Variant.H"
 #include "VariantClassifier.H"
+#include "OrfAnalyzer.H"
 using namespace std;
 using namespace BOOM;
 
@@ -51,6 +52,7 @@ private:
   bool allowExonSkipping, allowIntronRetention, allowCrypticSites;
   bool reverseStrand, quiet;
   String CIGAR;
+  OrfAnalyzer *orfAnalyzer;
   Essex::CompositeNode *root;
   Essex::Node *startCodonMsg;
   Vector<Variant> variants;
@@ -124,7 +126,7 @@ FBI::FBI()
   : warningsRegex("/warnings=(\\d+)"), errorsRegex("/errors=(\\d+)"), 
     VCFwarnings(0), VCFerrors(0), startCodonMsg(NULL), substMatrix(NULL),
     variantRegex("(\\S+):(\\S+):(\\d+):(\\d+):([^:]*):([^:]*)"),
-    coordRegex("/coord=(\\S+)")
+    coordRegex("/coord=(\\S+)"), orfAnalyzer(NULL)
   {
     // ctor
   }
@@ -134,6 +136,7 @@ FBI::FBI()
 FBI::~FBI()
 {
   delete substMatrix;
+  delete orfAnalyzer;
   cout<<"FBI terminated successfully"<<endl;
 }
 
@@ -407,7 +410,24 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 	checker.checkFrameshifts(projectedLab,altLab,status);
       }
     }
-    else if(!quiet) status->append("noncoding");
+    else { // ref gene is noncoding
+      if(!quiet) status->append("noncoding");
+      int refOrfLen, altOrfLen;
+      Essex::CompositeNode *codingTranscript=
+	orfAnalyzer->noncodingToCoding(*refTrans,refSeqStr,refSeq,*altTrans,
+				       altSeqStr,altSeq,refOrfLen,altOrfLen);
+    if(codingTranscript) {
+	Essex::CompositeNode *changeNode=
+	  new Essex::CompositeNode("noncoding-to-coding");
+	Essex::CompositeNode *lengthNode=
+	  new Essex::CompositeNode("ORF-length");
+	lengthNode->append(refOrfLen);
+	lengthNode->append("=>");
+	lengthNode->append(altOrfLen);
+	changeNode->append(codingTranscript);
+	status->append(changeNode);
+      }
+    }
     delete altTrans;
   }
 
@@ -698,6 +718,9 @@ void FBI::processConfig(const String &filename)
   sensors.donorSensor=loadModel("donor-model",config);
   sensors.acceptorSensor=loadModel("acceptor-model",config);
   sensors.setConsensuses();
+
+  const int MIN_ORF_LEN=config.getIntOrDie("min-orf-length");
+  orfAnalyzer=new OrfAnalyzer(sensors,MIN_ORF_LEN);
 
   chdir(oldPath);
   delete [] oldPath;

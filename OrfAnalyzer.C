@@ -12,8 +12,8 @@ using namespace std;
 using namespace BOOM;
 
 
-OrfAnalyzer::OrfAnalyzer(SignalSensors &sensors)
-  : sensors(sensors)
+OrfAnalyzer::OrfAnalyzer(SignalSensors &sensors,int MIN_ORF_LEN)
+  : sensors(sensors), MIN_ORF_LEN(MIN_ORF_LEN)
 {
 }
 
@@ -58,5 +58,32 @@ int OrfAnalyzer::findStartCodon(const String &transcript,
 }
 
 
+
+Essex::CompositeNode *OrfAnalyzer::noncodingToCoding(
+				    const GffTranscript &refTrans,
+				    const String &refStr,
+				    const Sequence &refSeq,
+				    const GffTranscript &altTrans,
+				    const String &altStr,
+				    const Sequence &altSeq,
+				    int &refOrfLen,
+				    int &altOrfLen)
+{
+  float refStartScore; int refGenomicStart;
+  refOrfLen=altOrfLen=0;
+  GffTranscript *refORF=findORF(refTrans,refStr,refSeq,refStartScore,
+				refGenomicStart,refOrfLen);
+  float altStartScore; int altGenomicStart;
+  GffTranscript *altORF=findORF(altTrans,altStr,altSeq,altStartScore,
+				altGenomicStart,altOrfLen);
+  bool change=false;
+  if(!refORF && altORF && altOrfLen>=MIN_ORF_LEN) change=true;
+  else if(refORF && altORF && refORF<MIN_ORF_LEN && altOrfLen>=MIN_ORF_LEN &&
+	  altOrfLen>=2*refOrfLen)
+    change=true;
+  Essex::CompositeNode *ret=change ? altORF->toEssex() : NULL;
+  delete refORF; delete altORF;
+  return ret;
+}
 
 

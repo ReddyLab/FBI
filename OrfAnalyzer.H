@@ -19,12 +19,21 @@ using namespace BOOM;
  */
 class OrfAnalyzer {
 public:
-  OrfAnalyzer(SignalSensors &);
+  OrfAnalyzer(SignalSensors &,int MIN_ORF_LEN);
   GffTranscript *findORF(const GffTranscript &,const String &genomeStr,
 			 const Sequence &genomeSeq,float &startCodonScore,
 			 int &genomicStartCodonPos,int &orfLength);
+  Essex::CompositeNode *noncodingToCoding(const GffTranscript &refTrans,
+					  const String &refStr,
+					  const Sequence &refSeq,
+					  const GffTranscript &altTrans,
+					  const String &altStr,
+					  const Sequence &altSeq,
+					  int &refOrfLen,
+					  int &altOrfLen);
 private:
   SignalSensors &sensors;
+  const int MIN_ORF_LEN;
   int findStartCodon(const String &transcript,float &startCodonScore);
 };
 
