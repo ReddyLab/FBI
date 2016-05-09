@@ -91,6 +91,20 @@ private:
 		    Essex::CompositeNode *parent);
   void parseVariants(const String &,Vector<Variant> &,int substrateLen);
   Essex::CompositeNode *makeEssexVariants();
+  void handleProteinFate(const AlternativeStructure &,Essex::CompositeNode *,
+			 const String refProtein,const String &altSeqStr,
+			 const GffTranscript *refTrans);
+  int enumerateAlts(Essex::CompositeNode *altTransEssex,
+		    TranscriptSignals *signals,
+		    Essex::CompositeNode *status,
+		    const String &altSeqStr,
+		    int altSeqLen,
+		    const String &refProtein,
+		    const GffTranscript *refTrans,
+		    GffTranscript *altTrans,
+		    const String &xmlFilename,
+		    Essex::CompositeNode *root,
+		    ostream &osFBI);
 };
 
 
@@ -271,100 +285,11 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
       return -1;
     }
 
-    if(signals->anyBroken()) {
-      altTransEssex->deleteChild("translation");
-      appendBrokenSignals(signals,status);
-      EnumerateAltStructures enumerator(*signals,altSeqStr,MAX_SPLICE_SHIFT,
-					MIN_EXON_LEN,MIN_INTRON_LEN,
-					NMD_DISTANCE_PARM,sensors,
-					allowExonSkipping,allowIntronRetention,
-					allowCrypticSites);
-      const Vector<AlternativeStructure*> &altStructures=
-	enumerator.getAltStructures();
-      const int numStruct=altStructures.size();
-      if(numStruct>0) {
-	status->prepend("splicing-changes");
-	Essex::CompositeNode *altStructNode=
-	  new Essex::CompositeNode("alternate-structures");
-	status->append(altStructNode);
-	for(Vector<AlternativeStructure*>::const_iterator cur=
-	      altStructures.begin(), end=altStructures.end() ; cur!=end ; 
-	    ++cur) {
-	  const AlternativeStructure &s=**cur;
-	  Essex::CompositeNode *msg=s.msg;
-	  s.transcript->loadSequence(altSeqStr);
-	  s.transcript->computePhases();
-	  if(reverseStrand) s.transcript->reverseComplement(altSeqLen);
-	  Essex::CompositeNode *node=s.transcript->toEssex();
-	  VariantClassifier classifier(variants,VariantClassifier::ALT,
-				       *s.transcript);
-	  node->append(classifier.makeVariantsNode());
-	  s.reportCrypticSites(node,reverseStrand,altSeqLen);
-	  if(s.structureChange.anyChange()) {
-	    Essex::CompositeNode *changeNode=
-	      new Essex::CompositeNode("structure-change");
-	    node->prepend(changeNode);
-	    if(s.structureChange.crypticSite) 
-	      changeNode->append("cryptic-site");
-	    if(s.structureChange.exonSkipping) 
-	      changeNode->append("exon-skipping");
-	    if(s.structureChange.intronRetention) 
-	      changeNode->append("intron-retention");
-	    if(msg) { changeNode->append(msg); msg=NULL; }
-	  }
-	  if(msg) status->append(msg);
-	  altStructNode->append(node);
-	  switch(s.proteinFate) {
-	  case NMD_NONE:{      // nothing wrong
-	    s.transcript->loadSequence(altSeqStr);
-	    bool identical=s.transcript->getProtein()==refProtein;
-	    if(identical)
-	      node->append("fate","identical-protein");
-	    else {
-	      int matches, len;
-	      String altProtein=s.transcript->getProtein();
-	      alignProteins(refProtein,altProtein,matches);
-	      Essex::CompositeNode *fate=new Essex::CompositeNode("fate");
-	      fate->append("protein-differs");
-	      percentMatch(matches,refProtein.length(),altProtein.length(),
-			   fate);
-	      node->append(fate);
-	    }
-	  }break;
-	  case NMD_NMD: {       // premature stop codon & NMD
-	    //node->append("fate","NMD");
-	    Essex::CompositeNode *fate=new Essex::CompositeNode("fate");
-	    fate->append("NMD");
-	    fate->append("EJC-distance",s.ejcDistance);
-	    node->append(fate);
-	  }break;
-	  case NMD_TRUNCATION: {// premature stop codon, truncated protein
-	    int matches, len;
-	    String altProtein=s.transcript->getProtein();
-	    alignProteins(refProtein,altProtein,matches);
-	    Essex::CompositeNode *fate=new Essex::CompositeNode("fate");
-	    fate->append("protein-truncation");
-	    percentMatch(matches,refProtein.length(),altProtein.length(),fate);
-	    node->append(fate);
-	  }
-	    break;
-	  case NMD_NO_STOP:    // no stop codon
-	    if(refTrans->hasUTR3()) // can't predict if no annotated UTR
-	      node->append("fate","nonstop-decay");
-	    break;
-	  case NMD_NO_START:   // no start codon
-	    node->append("fate","noncoding");
-	    break;
-	  }
-	}
-      }
-      else status->prepend("no-transcript");
-      if(!xmlFilename.empty()) writeXML();
-      osFBI<<*root<<endl;
-      osFBI<<"#===========================================================\n";
-      delete altTrans;
-      return 0;
-    }
+    // Enumerate alternative structures
+    if(signals->anyBroken()) 
+      return enumerateAlts(altTransEssex,signals,status,altSeqStr,altSeqLen,
+			   refProtein,refTrans,altTrans,xmlFilename,root,
+			   osFBI);
 
     // Otherwise, projection was successful
     status->prepend("mapped");
@@ -465,6 +390,125 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   osFBI<<*root<<endl;
   osFBI<<"#===========================================================\n";
   return 0;
+}
+
+
+
+int FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
+		       TranscriptSignals *signals,
+		       Essex::CompositeNode *status,
+		       const String &altSeqStr,
+		       int altSeqLen,
+		       const String &refProtein,
+		       const GffTranscript *refTrans,
+		       GffTranscript *altTrans,
+		       const String &xmlFilename,
+		       Essex::CompositeNode *root,
+		       ostream &osFBI)
+{
+  altTransEssex->deleteChild("translation");
+  appendBrokenSignals(signals,status);
+  EnumerateAltStructures enumerator(*signals,altSeqStr,MAX_SPLICE_SHIFT,
+				    MIN_EXON_LEN,MIN_INTRON_LEN,
+				    NMD_DISTANCE_PARM,sensors,
+				    allowExonSkipping,allowIntronRetention,
+				    allowCrypticSites);
+  const Vector<AlternativeStructure*> &altStructures=
+    enumerator.getAltStructures();
+  const int numStruct=altStructures.size();
+  if(numStruct>0) {
+    status->prepend("splicing-changes");
+    Essex::CompositeNode *altStructNode=
+      new Essex::CompositeNode("alternate-structures");
+    status->append(altStructNode);
+    for(Vector<AlternativeStructure*>::const_iterator cur=
+	  altStructures.begin(), end=altStructures.end() ; cur!=end ; 
+	++cur) {
+      const AlternativeStructure &s=**cur;
+      Essex::CompositeNode *msg=s.msg;
+      s.transcript->loadSequence(altSeqStr);
+      s.transcript->computePhases();
+      if(reverseStrand) s.transcript->reverseComplement(altSeqLen);
+      Essex::CompositeNode *node=s.transcript->toEssex();
+      VariantClassifier classifier(variants,VariantClassifier::ALT,
+				   *s.transcript);
+      node->append(classifier.makeVariantsNode());
+      s.reportCrypticSites(node,reverseStrand,altSeqLen);
+      if(s.structureChange.anyChange()) {
+	Essex::CompositeNode *changeNode=
+	  new Essex::CompositeNode("structure-change");
+	node->prepend(changeNode);
+	if(s.structureChange.crypticSite) 
+	  changeNode->append("cryptic-site");
+	if(s.structureChange.exonSkipping) 
+	  changeNode->append("exon-skipping");
+	if(s.structureChange.intronRetention) 
+	  changeNode->append("intron-retention");
+	if(msg) { changeNode->append(msg); msg=NULL; }
+      }
+      if(msg) status->append(msg);
+      altStructNode->append(node);
+      handleProteinFate(s,node,refProtein,altSeqStr,refTrans);
+    }
+  }
+  else status->prepend("no-transcript");
+  if(!xmlFilename.empty()) writeXML();
+  osFBI<<*root<<endl;
+  osFBI<<"#===========================================================\n";
+  delete altTrans;
+  return 0;
+}
+
+
+
+void FBI::handleProteinFate(const AlternativeStructure &s,
+			    Essex::CompositeNode *node,
+			    const String refProtein,
+			    const String &altSeqStr,
+			    const GffTranscript *refTrans)
+{
+  switch(s.proteinFate) {
+  case NMD_NONE:{      // nothing wrong
+    s.transcript->loadSequence(altSeqStr);
+    bool identical=s.transcript->getProtein()==refProtein;
+    if(identical)
+      node->append("fate","identical-protein");
+    else {
+      int matches, len;
+      String altProtein=s.transcript->getProtein();
+      alignProteins(refProtein,altProtein,matches);
+      Essex::CompositeNode *fate=new Essex::CompositeNode("fate");
+      fate->append("protein-differs");
+      percentMatch(matches,refProtein.length(),altProtein.length(),
+		   fate);
+      node->append(fate);
+    }
+  }break;
+  case NMD_NMD: {       // premature stop codon & NMD
+    //node->append("fate","NMD");
+    Essex::CompositeNode *fate=new Essex::CompositeNode("fate");
+    fate->append("NMD");
+    fate->append("EJC-distance",s.ejcDistance);
+    node->append(fate);
+  }break;
+  case NMD_TRUNCATION: {// premature stop codon, truncated protein
+    int matches, len;
+    String altProtein=s.transcript->getProtein();
+    alignProteins(refProtein,altProtein,matches);
+    Essex::CompositeNode *fate=new Essex::CompositeNode("fate");
+    fate->append("protein-truncation");
+    percentMatch(matches,refProtein.length(),altProtein.length(),fate);
+    node->append(fate);
+  }
+    break;
+  case NMD_NO_STOP:    // no stop codon
+    if(refTrans->hasUTR3()) // can't predict if no annotated UTR
+      node->append("fate","nonstop-decay");
+    break;
+  case NMD_NO_START:   // no start codon
+    node->append("fate","noncoding");
+    break;
+  }
 }
 
 
