@@ -10,6 +10,7 @@
 #include "BOOM/GffTranscript.H"
 #include "BOOM/String.H"
 #include "BOOM/Sequence.H"
+#include "BOOM/CigarAlignment.H"
 #include "SignalSensors.H"
 using namespace std;
 using namespace BOOM;
@@ -31,6 +32,16 @@ public:
 					  const Sequence &altSeq,
 					  int &refOrfLen,
 					  int &altOrfLen);
+  Essex::CompositeNode *earlierStartCodon(const GffTranscript &altTrans,
+					  const String &altStr,
+					  const Sequence &altSeq,
+					  const String &refStr,
+					  const Sequence &refSeq,
+					  const CigarAlignment &altToRef,
+					  int &refOrfLen,
+					  int &altOrfLen,
+					  float &oldStartCodonScore,
+					  float &newStartCodonScore);
 private:
   SignalSensors &sensors;
   const int MIN_ORF_LEN;

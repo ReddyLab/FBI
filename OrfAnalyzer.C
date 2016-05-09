@@ -87,3 +87,26 @@ Essex::CompositeNode *OrfAnalyzer::noncodingToCoding(
 }
 
 
+
+Essex::CompositeNode *
+OrfAnalyzer::earlierStartCodon(const GffTranscript &altTrans,
+			       const String &altStr,
+			       const Sequence &altSeq,
+			       const String &refStr,
+			       const Sequence &refSeq,
+			       const CigarAlignment &alignment,
+			       int &oldOrfLen,
+			       int &newOrfLen,
+			       float &oldStartCodonScore,
+			       float &newStartCodonScore)
+{
+  /* Requirements: either the new start codon didn't exist in the reference,
+     or it had a much weaker score, or it was in a different reading frame.
+   */
+  int altGenomicStart;
+  GffTranscript *altORF=findORF(altTrans,altStr,altSeq,newStartCodonScore,
+				altGenomicStart,newOrfLen);
+
+}
+
+

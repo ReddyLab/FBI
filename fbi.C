@@ -61,6 +61,7 @@ private:
   int refSeqLen, altSeqLen;
   float openPenalty, extendPenalty;
   int bandwidth;
+  CigarAlignment *alignment, *revAlignment;
   SubstitutionMatrix<float> *substMatrix; // protein matrix
   GarbageIgnorer garbageCollector;
   GffTranscript *loadGff(const String &filename);
@@ -126,7 +127,8 @@ FBI::FBI()
   : warningsRegex("/warnings=(\\d+)"), errorsRegex("/errors=(\\d+)"), 
     VCFwarnings(0), VCFerrors(0), startCodonMsg(NULL), substMatrix(NULL),
     variantRegex("(\\S+):(\\S+):(\\d+):(\\d+):([^:]*):([^:]*)"),
-    coordRegex("/coord=(\\S+)"), orfAnalyzer(NULL)
+    coordRegex("/coord=(\\S+)"), orfAnalyzer(NULL),
+    alignment(NULL), revAlignment(NULL)
   {
     // ctor
   }
@@ -137,6 +139,8 @@ FBI::~FBI()
 {
   delete substMatrix;
   delete orfAnalyzer;
+  delete alignment;
+  delete revAlignment;
   cout<<"FBI terminated successfully"<<endl;
 }
 
@@ -229,6 +233,8 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
   // Make CIGAR alignment
   CigarString cigar(CIGAR);
   if(reverseStrand) cigar.reverse();
+  alignment=cigar.getAlignment();
+  revAlignment=alignment->invert(altSeqLen);
 
   // Project the reference GFF over to an alternate GFF
   mapTranscript(*refTrans,cigar,outGff,altSeqStr,altSeq);
@@ -548,7 +554,8 @@ void FBI::computeLabeling(GffTranscript &transcript,
 void FBI::mapLabeling(Labeling &from,Labeling &to,
 			      const CigarString &cigar)
 {
-  CigarAlignment &align=*cigar.getAlignment();
+  //  CigarAlignment &align=*cigar.getAlignment();
+  CigarAlignment &align=*alignment;
   to.asArray().setAllTo(LABEL_NONE);
   int L=align.length();
   for(int i=0 ; i<L ; ++i) {
@@ -581,7 +588,7 @@ void FBI::mapTranscript(GffTranscript &refTrans,
 				const String &altSeqStr,
 				const Sequence &altSeq)
 {
-  CigarAlignment &align=*cigar.getAlignment();
+  CigarAlignment &align=*alignment;//*cigar.getAlignment();
   Vector<GffExon*> rawExons;
   refTrans.getRawExons(rawExons);
   GffTranscript transcript(refTrans.getTranscriptId(),
