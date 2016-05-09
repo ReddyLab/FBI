@@ -93,7 +93,7 @@ EnumerateAltStructures::~EnumerateAltStructures()
 
 
 
-const Vector<AlternativeStructure*> &EnumerateAltStructures::getAltStructures()
+Vector<AlternativeStructure*> &EnumerateAltStructures::getAltStructures()
 {
   return altStructures;
 }

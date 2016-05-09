@@ -131,11 +131,12 @@ private:
 		     TranscriptSignals *signals,
 		     GffTranscript *altTrans,
 		     ostream &osFBI);
-  void processAltStructure(const AlternativeStructure &,
+  void processAltStructure(AlternativeStructure &,
 			   Essex::CompositeNode *altStructNode);
   void listStructureChanges(const AlternativeStructure &,
 			    Essex::CompositeNode *,
-			    Essex::CompositeNode *&msg);
+			    Essex::CompositeNode *&msg,
+			    Essex::CompositeNode *gainOfCoding);
   void handleNoncoding(const GffTranscript *altTrans);
   void handleCoding(GffTranscript *altTrans,
 		    ProjectionChecker &checker,
@@ -516,7 +517,8 @@ void FBI::handleNoncoding(const GffTranscript *altTrans)
   int refOrfLen, altOrfLen;
   Essex::CompositeNode *codingTranscript=
     orfAnalyzer->noncodingToCoding(*refTrans,refSeqStr,refSeq,*altTrans,
-				   altSeqStr,altSeq,refOrfLen,altOrfLen);
+				   altSeqStr,altSeq,refOrfLen,altOrfLen,
+				   reverseStrand,altSeqLen);
   if(codingTranscript) {
     Essex::CompositeNode *changeNode=
       new Essex::CompositeNode("noncoding-to-coding");
@@ -548,7 +550,7 @@ void FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
 				    NMD_DISTANCE_PARM,sensors,
 				    allowExonSkipping,allowIntronRetention,
 				    allowCrypticSites);
-  const Vector<AlternativeStructure*> &altStructures=
+  Vector<AlternativeStructure*> &altStructures=
     enumerator.getAltStructures();
   const int numStruct=altStructures.size();
   if(numStruct>0) {
@@ -556,10 +558,10 @@ void FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
     Essex::CompositeNode *altStructNode=
       new Essex::CompositeNode("alternate-structures");
     status->append(altStructNode);
-    for(Vector<AlternativeStructure*>::const_iterator cur=
+    for(Vector<AlternativeStructure*>::iterator cur=
 	  altStructures.begin(), end=altStructures.end() ; cur!=end ; 
 	++cur) {
-      const AlternativeStructure &s=**cur;
+      AlternativeStructure &s=**cur;
       processAltStructure(s,altStructNode);
     }
   }
@@ -575,19 +577,39 @@ void FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
 /****************************************************************
  FBI::processAltStructure()
  ****************************************************************/
-void FBI::processAltStructure(const AlternativeStructure &s,
+void FBI::processAltStructure(AlternativeStructure &s,
 			      Essex::CompositeNode *altStructNode)
 {
-  Essex::CompositeNode *msg=s.msg;
-  s.transcript->loadSequence(altSeqStr);
-  s.transcript->computePhases();
-  if(reverseStrand) s.transcript->reverseComplement(altSeqLen);
-  Essex::CompositeNode *node=s.transcript->toEssex();
+  Essex::CompositeNode *msg=s.msg, *gainOfCoding=NULL, *codingTranscript=NULL;
+  if(!refTrans->isCoding()) {
+    int refOrfLen, altOrfLen;
+    codingTranscript=
+      orfAnalyzer->noncodingToCoding(*refTrans,refSeqStr,refSeq,*s.transcript,
+				     altSeqStr,altSeq,refOrfLen,altOrfLen,
+				     reverseStrand,altSeqLen);
+    if(codingTranscript) {
+      gainOfCoding=new Essex::CompositeNode("noncoding-to-coding");
+      Essex::CompositeNode *lengthNode=
+	new Essex::CompositeNode("ORF-length");
+      lengthNode->append(refOrfLen);
+      lengthNode->append("=>");
+      lengthNode->append(altOrfLen);
+      gainOfCoding->append(lengthNode);
+    }
+  }
+  Essex::CompositeNode *node=NULL;
+  if(codingTranscript) node=codingTranscript;
+  else {
+    s.transcript->loadSequence(altSeqStr);
+    s.transcript->computePhases();
+    if(reverseStrand) s.transcript->reverseComplement(altSeqLen);
+    node=s.transcript->toEssex();
+  }
   VariantClassifier classifier(variants,VariantClassifier::ALT,
 			       *s.transcript);
   node->append(classifier.makeVariantsNode());
   s.reportCrypticSites(node,reverseStrand,altSeqLen);
-  listStructureChanges(s,node,msg);
+  listStructureChanges(s,node,msg,gainOfCoding);
   if(msg) status->append(msg);
   altStructNode->append(node);
   handleProteinFate(s,node);
@@ -600,7 +622,8 @@ void FBI::processAltStructure(const AlternativeStructure &s,
  ****************************************************************/
 void FBI::listStructureChanges(const AlternativeStructure &s,
 			       Essex::CompositeNode *node,
-			       Essex::CompositeNode *&msg)
+			       Essex::CompositeNode *&msg,
+			       Essex::CompositeNode *gainOfCoding)
 {
   if(s.structureChange.anyChange()) {
     Essex::CompositeNode *changeNode=
@@ -613,6 +636,7 @@ void FBI::listStructureChanges(const AlternativeStructure &s,
     if(s.structureChange.intronRetention) 
       changeNode->append("intron-retention");
     if(msg) { changeNode->append(msg); msg=NULL; }
+    if(gainOfCoding) changeNode->append(gainOfCoding);
   }
 }
 

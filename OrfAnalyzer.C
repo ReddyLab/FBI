@@ -67,7 +67,9 @@ Essex::CompositeNode *OrfAnalyzer::noncodingToCoding(
 				    const String &altStr,
 				    const Sequence &altSeq,
 				    int &refOrfLen,
-				    int &altOrfLen)
+				    int &altOrfLen,
+				    bool reverseStrand,
+				    int altSeqLen)
 {
   float refStartScore; int refGenomicStart;
   refOrfLen=altOrfLen=0;
@@ -81,6 +83,11 @@ Essex::CompositeNode *OrfAnalyzer::noncodingToCoding(
   else if(refORF && altORF && refORF<MIN_ORF_LEN && altOrfLen>=MIN_ORF_LEN &&
 	  altOrfLen>=2*refOrfLen)
     change=true;
+  if(change) {
+    altORF->computePhases();
+    altORF->loadSequence(altStr);
+    if(reverseStrand) altORF->reverseComplement(altSeqLen);
+  }
   Essex::CompositeNode *ret=change ? altORF->toEssex() : NULL;
   delete refORF; delete altORF;
   return ret;

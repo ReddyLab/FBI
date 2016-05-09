@@ -31,7 +31,9 @@ public:
 					  const String &altStr,
 					  const Sequence &altSeq,
 					  int &refOrfLen,
-					  int &altOrfLen);
+					  int &altOrfLen,
+					  bool reverseStrand,
+					  int altSeqLen);
   Essex::CompositeNode *earlierStartCodon(const GffTranscript &refTrans,
 					  const String &refStr,
 					  const Sequence &refSeq,

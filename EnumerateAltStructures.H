@@ -50,7 +50,7 @@ public:
 			 bool allowExonSkipping,bool allowIntronRetention,
 			 bool allowCrypticSites);
   virtual ~EnumerateAltStructures();
-  const Vector<AlternativeStructure*> &getAltStructures();
+  Vector<AlternativeStructure*> &getAltStructures();
 private:
   Vector<AlternativeStructure*> altStructures;
   int MAX_SPLICE_SHIFT, MIN_EXON_LEN, MIN_INTRON_LEN;
