@@ -378,7 +378,20 @@ fbi <fbi.config> <ref.gff> <ref.fasta> <alt.fasta> <out.gff> <out.essex>\n\
 				       *altTrans,altSeqStr,altSeq,
 				       *revAlignment,oldOrfLen,newOrfLen,
 				       oldStartScore,newStartScore);
-      if(upstreamStart) status->append(upstreamStart);
+      if(upstreamStart) {
+	Essex::CompositeNode *changeNode=
+	  new Essex::CompositeNode("new-upstream-start-codon");
+	changeNode->append("new-start-codon-score",newStartScore);
+	changeNode->append("old-start-codon-score",oldStartScore);
+	Essex::CompositeNode *lengthNode=
+	  new Essex::CompositeNode("ORF-length");
+	lengthNode->append(oldOrfLen);
+	lengthNode->append("=>");
+	lengthNode->append(newOrfLen);
+	changeNode->append(lengthNode);
+	changeNode->append(upstreamStart);
+	status->append(changeNode);
+      }
 
       String refProtein, altProtein;
       checker.translate(*refTrans,*altTrans,refProtein,altProtein);
