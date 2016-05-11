@@ -18,38 +18,27 @@ class Application {
 public:
   int main(int argc,char *argv[]);
 private:
-  GffTranscript *loadGff(const String &filename);
-  void mapTranscript(GffTranscript &,const String &cig,const String &outfile);
-  void mapExon(GffExon &,CigarAlignment &);
+  CigarAlignment *alignment;
+  void loadAlignment(const String &filename);
+  void mapTranscript(const GffTranscript &,ostream &os);
+  void mapExon(GffExon &);
 };
 
 
 
 int main(int argc,char *argv[])
-  {
-    try
-      {
-	Application app;
-	return app.main(argc,argv);
-      }
-    catch(const char *p)
-      {
-	cerr << p << endl;
-      }
-    catch(const string &msg)
-      {
-	cerr << msg.c_str() << endl;
-      }
-    catch(const exception &e)
-      {
-	cerr << "STL exception caught in main:\n" << e.what() << endl;
-      }
-    catch(...)
-      {
-	cerr << "Unknown exception caught in main" << endl;
-      }
-    return -1;
+{
+  try {
+    Application app;
+    return app.main(argc,argv);
   }
+  catch(const char *p) { cerr << p << endl; }
+  catch(const string &msg) { cerr << msg.c_str() << endl; }
+  catch(const exception &e) 
+    { cerr << "STL exception caught in main:\n" << e.what() << endl; }
+  catch(...) { cerr << "Unknown exception caught in main" << endl; }
+  return -1;
+}
 
 
 
@@ -61,33 +50,53 @@ int Application::main(int argc,char *argv[])
   if(cmd.numArgs()!=3)
     throw String("\n\
 map-annotations [options] <ref.gff> <ref-to-alt.cigar> <out.gff>\n\
-\n\
   -s X : change substrate (chrom) to X\n\
-\n\
-  NOTE: ref.gff must contain only one transcript\n\
 \n");
   const String refGffFile=cmd.arg(0);
   const String cigarFile=cmd.arg(1);
   const String outGff=cmd.arg(2);
+  bool optS=cmd.option('s');
+  String newSubstrate; if(optS) newSubstrate=cmd.optParm('s');
 
-  // Load reference GFF and CIGAR string
-  GffTranscript *refTrans=loadGff(refGffFile);
-  if(cmd.option('s')) refTrans->setSubstrate(cmd.optParm('s'));
-  String CIGAR;
-  File cigar(cigarFile);
-  CIGAR=cigar.getline();
-  cigar.close();
+  // Load alignment (CIGAR)
+  loadAlignment(cigarFile);
 
-  // Project the reference GFF over to an alternate GFF
-  mapTranscript(*refTrans,CIGAR,outGff);
+  // Project genes, if any
+  ofstream os(outGff.c_str());
+  GffReader reader(refGffFile);
+  Vector<GffTranscript*> &transcripts=*reader.loadTranscripts();
+  for(Vector<GffTranscript*>::iterator cur=transcripts.begin(), end=
+	transcripts.end() ; cur!=end ; ++cur) {
+    GffTranscript *transcript=*cur;
+    if(optS) transcript->setSubstrate(newSubstrate);
+    mapTranscript(*transcript,os);
+    delete transcript;
+  }
+  delete &transcripts;
+
+  // Project non-genic elements, if any
+
 
   return 0;
 }
 
 
 
-void Application::mapExon(GffExon &exon,CigarAlignment &align)
+void Application::loadAlignment(const String &filename)
 {
+  String line;
+  File f(filename);
+  line=f.getline();
+  f.close();
+  CigarString cigar(line);
+  alignment=cigar.getAlignment();
+}
+
+
+
+void Application::mapExon(GffExon &exon)
+{
+  CigarAlignment &align=*alignment;
   int begin=exon.getBegin(), end=exon.getEnd();
 
   // These two lines map the splice sites across the
@@ -99,37 +108,22 @@ void Application::mapExon(GffExon &exon,CigarAlignment &align)
 
 
 
-void Application::mapTranscript(GffTranscript &refTrans,const String &cig,
-				 const String &outfile)
+void Application::mapTranscript(const GffTranscript &refTrans,ostream &os)
 {
   GffTranscript transcript=refTrans;
-  CigarString cigar(cig);
-  CigarAlignment &align=*cigar.getAlignment();
   for(Vector<GffExon*>::iterator cur=transcript.getExons(), end=
 	transcript.getExonsEnd() ; cur!=end ; ++cur)
-    mapExon(**cur,align);
+    mapExon(**cur);
   for(Vector<GffExon*>::iterator cur=transcript.getUTR(), end=
 	transcript.getUTRend() ; cur!=end ; ++cur) {
-    mapExon(**cur,align);
+    mapExon(**cur);
   }
-  delete &align;
-  ofstream os(outfile.c_str());
   transcript.toGff(os);
 }
 
 
 
-GffTranscript *Application::loadGff(const String &filename)
-{
-  GffReader reader(filename);
-  Vector<GffTranscript*> *transcripts=reader.loadTranscripts();
-  const int n=transcripts->size();
-  if(n<1) throw filename+" contains no transcripts";
-  GffTranscript *transcript=(*transcripts)[0];
-  for(int i=1 ; i<n ; ++i) delete (*transcripts)[i];
-  delete transcripts;
-  return transcript;
-}
+
 
 
 
