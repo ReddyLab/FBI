@@ -10,6 +10,7 @@
 #include "BOOM/CommandLine.H"
 #include "BOOM/CigarString.H"
 #include "BOOM/GffReader.H"
+#include "BOOM/FastaReader.H"
 using namespace std;
 using namespace BOOM;
 
@@ -21,7 +22,7 @@ private:
   bool optS;
   String newSubstrate;
   CigarAlignment *alignment;
-  void loadAlignment(const String &filename);
+  void loadAlignment(const String &filename,bool fasta);
   void mapTranscript(const GffTranscript &,ostream &);
   void mapExon(GffExon &);
   void mapFeature(GffFeature &,ostream &);
@@ -51,11 +52,12 @@ int main(int argc,char *argv[])
 int Application::main(int argc,char *argv[])
 {
   // Process command line
-  CommandLine cmd(argc,argv,"s:");
+  CommandLine cmd(argc,argv,"fs:");
   if(cmd.numArgs()!=3)
     throw String("\n\
-map-annotations [options] <ref.gff> <ref-to-alt.cigar> <out.gff>\n\
+map-annotations [options] <ref.gff> <cigar-file> <out.gff>\n\
   -s X : change substrate (chrom) to X\n\
+  -f : cigar-file is actually a FASTA with /cigar=... on defline\n\
 \n");
   const String refGffFile=cmd.arg(0);
   const String cigarFile=cmd.arg(1);
@@ -64,7 +66,7 @@ map-annotations [options] <ref.gff> <ref-to-alt.cigar> <out.gff>\n\
   if(optS) newSubstrate=cmd.optParm('s');
 
   // Load alignment (CIGAR)
-  loadAlignment(cigarFile);
+  loadAlignment(cigarFile,cmd.option('f'));
 
   // Project genes, if any
   ofstream os(outGff.c_str());
@@ -73,6 +75,7 @@ map-annotations [options] <ref.gff> <ref-to-alt.cigar> <out.gff>\n\
   // Project non-genic elements, if any
   projectNongenic(refGffFile,os);
 
+  delete alignment;
   return 0;
 }
 
@@ -112,14 +115,27 @@ void Application::projectGenes(const String &filename,ostream &os)
 
 
 
-void Application::loadAlignment(const String &filename)
+void Application::loadAlignment(const String &filename,bool isFasta)
 {
-  String line;
-  File f(filename);
-  line=f.getline();
-  f.close();
-  CigarString cigar(line);
-  alignment=cigar.getAlignment();
+  if(isFasta) {
+    String defline, seq;
+    FastaReader::load(filename,defline,seq);
+    String id, remainder;
+    FastaReader::parseDefline(defline,id,remainder);
+    Map<String,String> attr;
+    FastaReader::parseAttributes(remainder,attr);
+    if(!attr.isDefined("cigar")) throw "No cigar element found in FASTA file";
+    CigarString cigar(attr["cigar"]);
+    alignment=cigar.getAlignment();
+  }
+  else {
+    String line;
+    File f(filename);
+    line=f.getline();
+    f.close();
+    CigarString cigar(line);
+    alignment=cigar.getAlignment();
+  }
 }
 
 
