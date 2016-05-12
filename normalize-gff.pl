@@ -13,11 +13,14 @@ my $n=@$transcripts;
 for(my $i=0 ; $i<$n ; ++$i) {
   my $transcript=$transcripts->[$i];
   my $gff=$transcript->toGff();
-  print "$gff";
-#   $array=$transcript->parseExtraFields(); # array of [key,value] pairs
-#   $hash=$transcript->hashExtraFields(\@keyValuePairs);
+  my $array=$transcript->parseExtraFields();
+  my $hash=$transcript->hashExtraFields($array);
+  my $type=$hash->{"type"};
+  if(!$type) { $type=$hash->{"gene_type"} }
+  if($type && $type ne "protein_coding") { $transcript->becomeNoncoding() }
 #   $transcript->setExtraFieldsFromKeyValuePairs(\@array); # [key,value]
 #   $transcript->setExtraFields($string);
+  print "$gff";
 }
 
 
