@@ -724,7 +724,8 @@ void FBI::appendBrokenSignals(const TranscriptSignals *signals)
   int numSignals=signals->numSignals();
   for(int i=0 ; i<numSignals ; ++i) {
     TranscriptSignal &signal=(*signals)[i];
-    if(!signal.isBroken()) continue;
+    //if(!signal.isBroken()) continue;
+    if(!signal.isBroken() && !signal.isWeakened()) continue;
     String tag;
     SignalType type=signal.getType();
     if(type==GT) tag=signal.weakened ? "weakened-donor" : "broken-donor";

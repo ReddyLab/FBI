@@ -33,6 +33,7 @@ struct TranscriptSignal {
   void makeDead(); // a placeholder for exon-skipping/intron-retent event
   bool isDead();
   bool isBroken() { return broken; }
+  bool isWeakened() { return weakened; }
   float getScore() { return score; }
   bool isCryptic() { return cryptic; }
   void setCryptic() { cryptic=true; }

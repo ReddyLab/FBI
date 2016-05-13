@@ -285,7 +285,7 @@ bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
       + " " + altScore;
     //altWindow=getParsedWindow(*sensors.donorSensor,altBegin,altSubstrate);
     weakened=true;
-    //return false;
+    return false;
   }
   return true;
 }  
@@ -326,7 +326,7 @@ bool ProjectionChecker::checkAcceptor(GffExon &refExon,GffExon &altExon,
     */
     altWindow=getParsedWindow(*sensors.acceptorSensor,altBegin,altSubstrate);
     weakened=true; 
-    //return false; 
+    return false; 
   }
   return true;
 }
