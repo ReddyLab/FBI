@@ -36,7 +36,7 @@ using namespace BOOM;
 /****************************************************************
  Globals
  ****************************************************************/
-bool VERBOSE=true;
+bool VERBOSE=false;
 static const char *PROGRAM_NAME="find-variant-signals";
 static const char *VERSION="1.0";
 Alphabet alphabet;
@@ -593,7 +593,7 @@ void FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
 void FBI::processAltStructure(AlternativeStructure &s,
 			      Essex::CompositeNode *altStructNode)
 {
-  Essex::CompositeNode *msg=s.msg, *msg2=NULL, *changeToCoding=NULL;
+  Essex::CompositeNode *msg2=NULL, *changeToCoding=NULL;
   if(refTrans->isCoding()) { // see if a new start coding extends the ORF
     int oldOrfLen, newOrfLen; float oldStartScore, newStartScore;
     changeToCoding=
@@ -643,8 +643,8 @@ void FBI::processAltStructure(AlternativeStructure &s,
 			       *s.transcript);
   node->append(classifier.makeVariantsNode());
   s.reportCrypticSites(node,reverseStrand,altSeqLen);
-  listStructureChanges(s,node,msg,msg2);
-  if(msg) status->append(msg);
+  listStructureChanges(s,node,s.msg,msg2);
+  if(s.msg) { status->append(s.msg); s.msg=NULL; }
   altStructNode->append(node);
   handleProteinFate(s,node);
 }
