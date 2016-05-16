@@ -36,7 +36,7 @@ using namespace BOOM;
 /****************************************************************
  Globals
  ****************************************************************/
-bool VERBOSE=false;
+bool VERBOSE=true;
 static const char *PROGRAM_NAME="find-variant-signals";
 static const char *VERSION="1.0";
 Alphabet alphabet;
@@ -382,7 +382,7 @@ void FBI::checkProjection(const String &outGff,
     delete altTrans;
     return -1;
   }
-  
+
   // Enumerate alternative structures
   if(signals->anyBroken()) {
     enumerateAlts(altTransEssex,signals,altTrans,osFBI);
@@ -473,7 +473,7 @@ void FBI::handleCoding(GffTranscript *altTrans,
     changeNode->append(upstreamStart);
     status->append(changeNode);
   }
-  
+
   String refProtein, altProtein;
   checker.translate(*refTrans,*altTrans,refProtein,altProtein);
   
@@ -502,7 +502,7 @@ void FBI::handleCoding(GffTranscript *altTrans,
     break;
   case NMD_NO_START: status->append("no-start-codon"); break;
   }
-  
+
   // Check for start codon
   if(startCodonMsg) status->append(startCodonMsg);
   

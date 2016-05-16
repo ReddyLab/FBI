@@ -44,7 +44,8 @@ while(1) {
   my ($altID,$hap)=($1,$2);
   my $modelFile=getModelFile($altSeqRef,$modelDir);
   my $transcripts=$byGene->{$altID};
-  die "no transcripts on substrate $altID" 
+  #die "no transcripts on substrate $altID" 
+  next
     unless $transcripts && $transcripts->[0];
   my $strand=$transcripts->[0]->getStrand();
   my ($refDef,$refSeqRef);
@@ -124,9 +125,8 @@ sub getModelFile
   my $ATCG=$$seqRef=~s/([ACGT])/$1/g;
   my $GC=$$seqRef=~s/([CG])/$1/g;
   my $gc=$GC/$ATCG;
-
-  print "GC%=$gc GC#=$GC ATCG#=$ATCG\n"; ###
-
+  my $rounded=int($gc*100+5/9)/100;
+  print "GC%=$rounded #GC=$GC #ACGT=$ATCG\n"; ###
   my $range;
   if($gc<=0.43) { $range="0-43" }
   elsif($gc<=0.51) { $range="43-51" }

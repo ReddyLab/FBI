@@ -118,6 +118,7 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   int altGenomicStart;
   GffTranscript *altORF=findORF(altTrans,altStr,altSeq,newStartCodonScore,
 				altGenomicStart,newOrfLen);
+  if(!altORF) return NULL;
   oldOrfLen=altTrans.getCDSlength();
   int oldBegin, oldEnd;
   altTrans.getCDSbeginEnd(oldBegin,oldEnd);
