@@ -124,6 +124,9 @@ sub getModelFile
   my $ATCG=$$seqRef=~s/([ACGT])/$1/g;
   my $GC=$$seqRef=~s/([CG])/$1/g;
   my $gc=$GC/$ATCG;
+
+  print "GC%=$gc GC#=$GC ATCG#=$ATCG\n"; ###
+
   my $range;
   if($gc<=0.43) { $range="0-43" }
   elsif($gc<=0.51) { $range="43-51" }

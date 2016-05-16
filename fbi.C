@@ -36,6 +36,7 @@ using namespace BOOM;
 /****************************************************************
  Globals
  ****************************************************************/
+bool VERBOSE=false;
 static const char *PROGRAM_NAME="find-variant-signals";
 static const char *VERSION="1.0";
 Alphabet alphabet;
@@ -207,36 +208,45 @@ int FBI::main(int argc,char *argv[])
   parseCommandLine(cmd);
 
   // Read some data from files
+  if(VERBOSE) cerr<<"loading inputs"<<endl;
   loadInputs(configFile,refGffFile,refFasta,altFasta);
 
   // Set up to generate structured output in Essex/XML
+  if(VERBOSE) cerr<<"preparing output"<<endl;
   ofstream osFBI(outFBI.c_str());
   status=new Essex::CompositeNode("status");
   initEssex(osFBI,cmd);
   
   // Check that the reference gene is well-formed
+  if(VERBOSE) cerr<<"checking reference gene"<<endl;
   bool referenceIsOK=checkRefGene();
 
   // Compute the reference labeling
+  if(VERBOSE) cerr<<"computing reference labeling"<<endl;
   Labeling refLab(refSeqLen);
   computeLabeling(*refTrans,refLab);
 
   // Make CIGAR alignment
+  if(VERBOSE) cerr<<"building alignment"<<endl;
   buildAlignment();
 
   // Project the reference GFF over to an alternate GFF
+  if(VERBOSE) cerr<<"mapping transcript"<<endl;
   mapTranscript(outGff);
 
   // Generate labeling file
+  if(VERBOSE) cerr<<"projecting the labeling"<<endl;
   Labeling projectedLab(altSeqLen);
   mapLabeling(refLab,projectedLab,labelingFile);
 
   // Check the projection to see if the gene might be broken
+  if(VERBOSE) cerr<<"checking projection"<<endl;
   bool mapped=false;
   if(referenceIsOK) 
     checkProjection(outGff,mapped,projectedLab,osFBI);
 
   // Flush output
+  if(VERBOSE) cerr<<"cleaning up"<<endl;
   flushOutput(osFBI,mapped);
   return 0;
 }
@@ -354,8 +364,9 @@ void FBI::checkProjection(const String &outGff,
   GffTranscript *altTrans=loadGff(outGff);
   altTrans->loadSequence(altSeqStr);
   altTrans->computePhases();
-  if(reverseStrand) altTrans->reverseComplement(altSeqLen);
-  Essex::CompositeNode *altTransEssex=altTrans->toEssex();
+  //if(reverseStrand) altTrans->reverseComplement(altSeqLen);
+  Essex::CompositeNode *altTransEssex=
+    altTrans->toEssex(reverseStrand,altSeqLen);
   altTransEssex->getTag()="mapped-transcript";
   VariantClassifier classifier(variants,VariantClassifier::ALT,*altTrans);
   altTransEssex->append(classifier.makeVariantsNode());
@@ -413,8 +424,9 @@ void FBI::initEssex(ostream &osFBI,
   Essex::CompositeNode *essexVariants=makeEssexVariants();
   root->append(essexVariants);
   refTrans->computePhases();
-  if(reverseStrand) refTrans->reverseComplement(refSeqLen);
-  Essex::CompositeNode *refTransEssex=refTrans->toEssex();
+  //if(reverseStrand) refTrans->reverseComplement(refSeqLen);
+  Essex::CompositeNode *refTransEssex=
+    refTrans->toEssex(reverseStrand,refSeqLen);
   refTransEssex->getTag()="reference-transcript";
   VariantClassifier classifier(variants,VariantClassifier::REF,*refTrans);
   refTransEssex->append(classifier.makeVariantsNode());
@@ -853,7 +865,6 @@ void FBI::mapLabeling(Labeling &from,Labeling &to,const String &filename)
     int j=align[i];
     if(j!=CIGAR_UNDEFINED) to[j]=from[i];
   }
-  delete &align;
   if(!filename.empty()) {
     ofstream os(filename.c_str());
     os<<to;
@@ -922,7 +933,6 @@ void FBI::mapTranscript(const String &outfile)
       transcript.splitUTRandCDS(altSeqStr,startCodon,sensors.stopCodons);
   }
   transcript.setExonTypes(); transcript.setUTRtypes();
-  delete &align;
   ofstream os(outfile.c_str());
   transcript.toGff(os);
 }
