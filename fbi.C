@@ -385,9 +385,7 @@ void FBI::checkProjection(const String &outGff,
 
   // Enumerate alternative structures
   if(signals->anyBroken())
-    enumerateAlts(altTransEssex,signals,altTrans,osFBI);
-    return;
-  }
+    { enumerateAlts(altTransEssex,signals,altTrans,osFBI); return; }
   if(signals->anyWeakened()) appendBrokenSignals(signals);
 
   // Otherwise, projection was successful

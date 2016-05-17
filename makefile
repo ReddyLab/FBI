@@ -2565,6 +2565,8 @@ fbi: \
 		$(LIBS)
 #---------------------------------------------------------
 fbi-test: \
+		$(OBJ)/OrfAnalyzer.o \
+		$(OBJ)/VariantClassifier.o \
 		$(OBJ)/StartCodonFinder.o \
 		$(OBJ)/SignalSensors.o \
 		$(OBJ)/StructureChange.o \
@@ -2623,6 +2625,8 @@ fbi-test: \
 		$(OBJ)/ProjectionChecker.o \
 		$(OBJ)/fbi.o
 	$(CC) $(LDFLAGS) -o fbi-test \
+		$(OBJ)/OrfAnalyzer.o \
+		$(OBJ)/VariantClassifier.o \
 		$(OBJ)/StartCodonFinder.o \
 		$(OBJ)/SignalSensors.o \
 		$(OBJ)/StructureChange.o \
