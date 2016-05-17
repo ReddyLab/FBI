@@ -14,7 +14,7 @@ using namespace BOOM;
 VariantClassifier::VariantClassifier(const Vector<Variant> &variants,
 				     RefAlt refAlt,
 				     const GffTranscript &transcript)
-  : CLOSENESS_THRESHOLD(20)
+  : CLOSENESS_THRESHOLD(50)
 {
   classify(variants,refAlt,transcript);
 }
@@ -121,13 +121,15 @@ void VariantClassifier::classify(const Vector<Variant> &variants,
   for(Vector<VariantInfo>::iterator cur=all.begin(), end=all.end() ; 
       cur!=end ; ++cur) {
     const VariantInfo &info=*cur;
-    if(info.distanceToSpliceSite>=0 && info.distanceToSpliceSite<
-       CLOSENESS_THRESHOLD)
-      nearSpliceVariants.push_back(info);
     switch(info.elem) {
     case UTR: utrVariants.push_back(info); break;
     case CDS: cdsVariants.push_back(info); break;
-    case INTRON: intronVariants.push_back(info); break;
+    case INTRON:
+      //intronVariants.push_back(info);
+      if(info.distanceToSpliceSite>=0 && info.distanceToSpliceSite<
+	 CLOSENESS_THRESHOLD)
+	nearSpliceVariants.push_back(info);
+      break;
     case SPLICE_SITE: spliceSiteVariants.push_back(info); break;
     case INTERGENIC: break;
     }
@@ -156,12 +158,14 @@ void VariantClassifier::setClosenessThreshold(int t)
 
 Essex::CompositeNode *VariantClassifier::makeVariantsNode() const
 {
+  if(cdsVariants.size()==0 && spliceSiteVariants.size()==0 &&
+     nearSpliceVariants.size()==0 && utrVariants.size()==0) return NULL;
   Essex::CompositeNode *parent=new Essex::CompositeNode("variants");
   addVariants(cdsVariants,"CDS-variants",parent);
   addVariants(spliceSiteVariants,"splice-site-variants",parent);
   addVariants(nearSpliceVariants,"near-splice-variants",parent);
   addVariants(utrVariants,"UTR-variants",parent);
-  addVariants(intronVariants,"intron-variants",parent);
+  //addVariants(intronVariants,"intron-variants",parent);
   return parent;
 }
 

@@ -422,8 +422,8 @@ void FBI::initEssex(ostream &osFBI,
   append(root,"ref-length",refSeqStr.length());
   append(root,"alt-length",altSeqStr.length());
   //append(root,"defline",altDefline);
-  Essex::CompositeNode *essexVariants=makeEssexVariants();
-  root->append(essexVariants);
+  //Essex::CompositeNode *essexVariants=makeEssexVariants();
+  //root->append(essexVariants);
   refTrans->computePhases();
   //if(reverseStrand) refTrans->reverseComplement(refSeqLen);
   Essex::CompositeNode *refTransEssex=
