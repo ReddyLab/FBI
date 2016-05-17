@@ -9,6 +9,8 @@ use TempFilename;
 my $name=ProgramName::get();
 die "$name <model-file-or-dir> <ref.multi-fasta> <alt.multi-fasta> <ref.multi-gff> <out.fbi>\n" unless @ARGV==5;
 my ($modelDir,$refFasta,$altFasta,$refGFF,$outFBI)=@ARGV;
+my $commandline = join " ", $0, @ARGV;
+print "$commandline\n";
 
 my $QUIET=""; #"-q";
 my $DEBUG=0;
@@ -42,6 +44,7 @@ while(1) {
   $altDef=~/^\s*>\s*(\S+)_(\d)/ 
     || die "Can't parse ID from alt defline: $altDef";
   my ($altID,$hap)=($1,$2);
+  print "$altID\_$hap\n";
   my $modelFile=getModelFile($altSeqRef,$modelDir);
   my $transcripts=$byGene->{$altID};
   #die "no transcripts on substrate $altID" 
@@ -67,10 +70,10 @@ while(1) {
   for(my $i=0 ; $i<$numTranscripts ; ++$i) {
     my $transcript=$transcripts->[$i];
     my $transID=$transcript->getTranscriptId();
+    print "transcript $transID\n";
     next unless $STOP_AFTER eq "" || $STOP_AFTER eq $transID;
     ++$totalTranscripts;
     if($MAX_TRANSCRIPTS>0 && $totalTranscripts>$MAX_TRANSCRIPTS) { exit }
-    print "transcript $transID\n" if $DEBUG;
     my $gff=$transcript->toGff();
     open(GFF,">$oneGeneGFF") || die "can't write file $oneGeneGFF";
     print GFF "$gff";
@@ -126,7 +129,7 @@ sub getModelFile
   my $GC=$$seqRef=~s/([CG])/$1/g;
   my $gc=$GC/$ATCG;
   my $rounded=int($gc*100+5/9)/100;
-  print "GC%=$rounded #GC=$GC #ACGT=$ATCG\n"; ###
+  #print "GC%=$rounded #GC=$GC #ACGT=$ATCG\n"; ###
   my $range;
   if($gc<=0.43) { $range="0-43" }
   elsif($gc<=0.51) { $range="43-51" }

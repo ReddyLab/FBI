@@ -420,6 +420,8 @@ void FBI::initEssex(ostream &osFBI,
   append(root,"vcf-warnings",VCFwarnings);
   append(root,"vcf-errors",VCFerrors);
   append(root,"alignment",CIGAR);
+  append(root,"ref-len",refSeqStr.length());
+  append(root,"alt-len",altSeqStr.length());
   //append(root,"defline",altDefline);
   Essex::CompositeNode *essexVariants=makeEssexVariants();
   root->append(essexVariants);
