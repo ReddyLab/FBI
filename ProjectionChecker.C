@@ -244,6 +244,23 @@ String ProjectionChecker::getParsedWindow(SignalSensor &sensor,
 
 
 
+String ProjectionChecker::spliceSiteChangeString(SignalSensor *sensor,
+						 int refBegin,
+						 const String &refSubstrate,
+						 float refScore,
+						 int altBegin,
+						 const String &altSubstrate,
+						 float altScore)
+{
+  return
+    getParsedWindow(*sensor,refBegin,refSubstrate)
+    + " " + refScore + " "
+    + getParsedWindow(*sensors.donorSensor,altBegin,altSubstrate)
+    + " " + altScore;
+}
+
+
+
 bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
 				   bool &weakened,String &altDonor,
 				   String &altWindow,float &refScore,
@@ -261,13 +278,8 @@ bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
     const offset=sensors.donorSensor->getConsensusOffset();
     const int altBegin=altExon.getEnd()-offset;
     const int refBegin=refExon.getEnd()-offset;
-    /*altWindow=getParsedWindow(*sensors.donorSensor,altBegin,altSubstrate)+
-      " "+getParsedWindow(*sensors.donorSensor,refBegin,refSubstrate);*/
-   altWindow=
-      getParsedWindow(*sensors.donorSensor,refBegin,refSubstrate)
-      + " " + refScore + " "
-      + getParsedWindow(*sensors.donorSensor,altBegin,altSubstrate)
-      + " " + altScore;
+    altWindow=spliceSiteChangeString(sensors.donorSensor,refBegin,refSubstrate,
+				     refScore,altBegin,altSubstrate,altScore);
     weakened=false;
     return false;
   }
@@ -278,12 +290,8 @@ bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
     const offset=sensors.donorSensor->getConsensusOffset();
     const int altBegin=altExon.getEnd()-offset;
     const int refBegin=refExon.getEnd()-offset;
-    altWindow=
-      getParsedWindow(*sensors.donorSensor,refBegin,refSubstrate)
-      + " " + refScore + " "
-      + getParsedWindow(*sensors.donorSensor,altBegin,altSubstrate)
-      + " " + altScore;
-    //altWindow=getParsedWindow(*sensors.donorSensor,altBegin,altSubstrate);
+    altWindow=spliceSiteChangeString(sensors.donorSensor,refBegin,refSubstrate,
+				     refScore,altBegin,altSubstrate,altScore);
     weakened=true;
     return false;
   }
@@ -310,7 +318,9 @@ bool ProjectionChecker::checkAcceptor(GffExon &refExon,GffExon &altExon,
     const int offset=sensors.acceptorSensor->getConsensusOffset();
     const int altBegin=altExon.getBegin()-2-offset;
     const int refBegin=refExon.getBegin()-2-offset;
-    altWindow=getParsedWindow(*sensors.acceptorSensor,altBegin,altSubstrate);
+    altWindow=spliceSiteChangeString(sensors.acceptorSensor,refBegin,
+				     refSubstrate,refScore,altBegin,
+				     altSubstrate,altScore);
     weakened=false;
     return false;
     }
@@ -318,13 +328,9 @@ bool ProjectionChecker::checkAcceptor(GffExon &refExon,GffExon &altExon,
     const int offset=sensors.acceptorSensor->getConsensusOffset();
     const int altBegin=altExon.getBegin()-2-offset;
     const int refBegin=refExon.getBegin()-2-offset;
-    /*altWindow=
-      getParsedWindow(*sensors.acceptorSensor,refBegin,refSubstrate)
-      + " " +refScore + " "
-      + getParsedWindow(*sensors.acceptorSensor,altBegin,altSubstrate)
-      + " " + altScore;
-    */
-    altWindow=getParsedWindow(*sensors.acceptorSensor,altBegin,altSubstrate);
+    altWindow=spliceSiteChangeString(sensors.acceptorSensor,refBegin,
+				     refSubstrate,refScore,altBegin,
+				     altSubstrate,altScore);
     weakened=true; 
     return false; 
   }

@@ -76,6 +76,13 @@ protected:
   float scoreDonor(GffExon &exon,const String &str,const Sequence &seq);
   float scoreAcceptor(GffExon &exon,const String &str,const Sequence &seq);
   String getParsedWindow(SignalSensor &,int windowPos,const String &genome);
+  String spliceSiteChangeString(SignalSensor *sensor,
+				int refBegin,
+				const String &refSubstrate,
+				float refScore,
+				int altBegin,
+				const String &altSubstrate,
+				float altScore);
 };
 
 
