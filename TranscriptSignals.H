@@ -64,6 +64,7 @@ public:
   void setStartCodon(int);
   int getStartCodon() const;
   bool anyBroken() const;
+  bool anyWeakened() const;
   bool anyDead() const;
   bool anyCryptic() const;
   void printOn(ostream &) const;

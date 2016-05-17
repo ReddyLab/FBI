@@ -198,6 +198,16 @@ bool TranscriptSignals::anyBroken() const
 
 
 
+bool TranscriptSignals::anyWeakened() const
+{
+  for(Vector<TranscriptSignal>::const_iterator cur=signals.begin(), end=
+	signals.end() ; cur!=end ; ++cur)
+    if((*cur).isWeakened()) return true;
+  return false;
+}
+
+
+
 bool TranscriptSignals::anyCryptic() const
 {
   for(Vector<TranscriptSignal>::const_iterator cur=signals.begin(), end=
