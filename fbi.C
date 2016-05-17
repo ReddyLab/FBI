@@ -420,8 +420,8 @@ void FBI::initEssex(ostream &osFBI,
   append(root,"vcf-warnings",VCFwarnings);
   append(root,"vcf-errors",VCFerrors);
   append(root,"alignment",CIGAR);
-  append(root,"ref-len",refSeqStr.length());
-  append(root,"alt-len",altSeqStr.length());
+  append(root,"ref-length",refSeqStr.length());
+  append(root,"alt-length",altSeqStr.length());
   //append(root,"defline",altDefline);
   Essex::CompositeNode *essexVariants=makeEssexVariants();
   root->append(essexVariants);
@@ -753,12 +753,7 @@ void FBI::appendBrokenSignals(const TranscriptSignals *signals)
     Vector<String> fields; signal.seq.getFields(fields);
     for(Vector<String>::iterator cur=fields.begin(), end=fields.end() ; 
 	cur!=end ; ++cur) node->append(*cur);
-    //node->append(signal.seq);
-    //node->append(signal.refScore);
-    //Essex::CompositeNode *cutoffNode=new Essex::CompositeNode("threshold");
     SignalSensor *sensor=sensors.findSensor(type);
-    //cutoffNode->append(float(sensor->getCutoff()));
-    //node->append(cutoffNode);
     node->append("threshold:"); node->append(float(sensor->getCutoff()));
     status->append(node);
   }

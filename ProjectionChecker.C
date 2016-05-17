@@ -268,6 +268,7 @@ bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
 {
   // NOTE: this function assumes forward-strand features only ###
 
+  weakened=false;
   refScore=scoreDonor(refExon,refSubstrate,refSeq);
   altScore=scoreDonor(altExon,altSubstrate,altSeq);
   cutoff=sensors.donorSensor->getCutoff();
@@ -280,7 +281,6 @@ bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
     const int refBegin=refExon.getEnd()-offset;
     altWindow=spliceSiteChangeString(sensors.donorSensor,refBegin,refSubstrate,
 				     refScore,altBegin,altSubstrate,altScore);
-    weakened=false;
     return false;
   }
 
@@ -293,7 +293,7 @@ bool ProjectionChecker::checkDonor(GffExon &refExon,GffExon &altExon,
     altWindow=spliceSiteChangeString(sensors.donorSensor,refBegin,refSubstrate,
 				     refScore,altBegin,altSubstrate,altScore);
     weakened=true;
-    return false;
+    //return false;
   }
   return true;
 }  
@@ -307,6 +307,7 @@ bool ProjectionChecker::checkAcceptor(GffExon &refExon,GffExon &altExon,
 {
   // NOTE: this function assumes forward-strand features only ###
 
+  weakened=false;
   refScore=scoreAcceptor(refExon,refSubstrate,refSeq);
   altScore=scoreAcceptor(altExon,altSubstrate,altSeq);
   cutoff=sensors.acceptorSensor->getCutoff();
@@ -321,7 +322,6 @@ bool ProjectionChecker::checkAcceptor(GffExon &refExon,GffExon &altExon,
     altWindow=spliceSiteChangeString(sensors.acceptorSensor,refBegin,
 				     refSubstrate,refScore,altBegin,
 				     altSubstrate,altScore);
-    weakened=false;
     return false;
     }
   if(refScore>=cutoff && altScore<cutoff && refScore-altScore>=log(2)) { 
@@ -332,7 +332,7 @@ bool ProjectionChecker::checkAcceptor(GffExon &refExon,GffExon &altExon,
 				     refSubstrate,refScore,altBegin,
 				     altSubstrate,altScore);
     weakened=true; 
-    return false; 
+    //return false; 
   }
   return true;
 }

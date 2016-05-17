@@ -8,7 +8,7 @@ die "$name <in.essex> <out.essex>\n" unless @ARGV==2;
 my ($infile,$outfile)=@ARGV;
 
 open(OUT,">$outfile") || die "can't write file: $outfile\n";
-my $badAnnos=0; my $vcfErrors=0; my $mapped=0;
+my $badAnnos=0; my $vcfErrors=0; my $mapped=0; my $kept=0;
 my $parser=new EssexParser($infile);
 while(1) {
   my $report=$parser->nextElem();
@@ -22,10 +22,12 @@ while(1) {
   if($code eq "mapped") { ++$mapped; next }
   $report->print(\*OUT);
   print OUT "\n";
+  ++$kept;
 }
 close(OUT);
 
 print "bad-annotation $badAnnos\n";
 print "too-many-vcf-errors $vcfErrors\n";
 print "mapped $mapped\n";
+print "retained $kept\n";
 
