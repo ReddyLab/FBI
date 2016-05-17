@@ -177,7 +177,7 @@ FBI::FBI()
     VCFwarnings(0), VCFerrors(0), startCodonMsg(NULL), substMatrix(NULL),
     variantRegex("(\\S+):(\\S+):(\\d+):(\\d+):([^:]*):([^:]*)"),
     coordRegex("/coord=(\\S+)"), orfAnalyzer(NULL),
-    alignment(NULL), revAlignment(NULL)
+    alignment(NULL), revAlignment(NULL), status(NULL)
 {
   alphabet=DnaAlphabet::global();
 }
@@ -211,16 +211,16 @@ int FBI::main(int argc,char *argv[])
   if(VERBOSE) cerr<<"loading inputs"<<endl;
   loadInputs(configFile,refGffFile,refFasta,altFasta);
 
+  // Check that the reference gene is well-formed
+  if(VERBOSE) cerr<<"checking reference gene"<<endl;
+  status=new Essex::CompositeNode("status");
+  bool referenceIsOK=checkRefGene();
+
   // Set up to generate structured output in Essex/XML
   if(VERBOSE) cerr<<"preparing output"<<endl;
   ofstream osFBI(outFBI.c_str());
-  status=new Essex::CompositeNode("status");
   initEssex(osFBI,cmd);
   
-  // Check that the reference gene is well-formed
-  if(VERBOSE) cerr<<"checking reference gene"<<endl;
-  bool referenceIsOK=checkRefGene();
-
   // Compute the reference labeling
   if(VERBOSE) cerr<<"computing reference labeling"<<endl;
   Labeling refLab(refSeqLen);
@@ -1111,8 +1111,8 @@ void FBI::percentMatch(int matches,int refLen,int altLen,
   Essex::CompositeNode *node=new Essex::CompositeNode("percent-match");
   node->append(String(int(10000*percent+5.0/9)/100.0));
   node->append(String(matches)+"/"+max(refLen,altLen));
-  node->append(String("ref=")+refLen);
-  node->append(String("alt=")+altLen);
+  node->append(String("ref-length=")+refLen);
+  node->append(String("alt-length=")+altLen);
   parent->append(node);
 }
 
