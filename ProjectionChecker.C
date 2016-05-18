@@ -255,7 +255,7 @@ String ProjectionChecker::spliceSiteChangeString(SignalSensor *sensor,
   return
     getParsedWindow(*sensor,refBegin,refSubstrate)
     + " " + refScore + " "
-    + getParsedWindow(*sensors.donorSensor,altBegin,altSubstrate)
+    + getParsedWindow(*sensor,altBegin,altSubstrate)
     + " " + altScore;
 }
 
