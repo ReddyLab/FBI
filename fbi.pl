@@ -11,6 +11,7 @@ die "$name <model-file-or-dir> <ref.multi-fasta> <alt.multi-fasta> <ref.multi-gf
 my ($modelDir,$refFasta,$altFasta,$refGFF,$outFBI)=@ARGV;
 my $commandline = join " ", $0, @ARGV;
 print "$commandline\n";
+system("hostname");
 
 my $QUIET=""; #"-q";
 my $DEBUG=0;
