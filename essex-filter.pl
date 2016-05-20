@@ -2,6 +2,10 @@
 use strict;
 use EssexParser;
 use ProgramName;
+$|=1;
+
+my $slurm=$ENV{"SLURM_JOB_ID"};
+print "SLURM $slurm\n";
 
 my $name=ProgramName::get();
 die "$name <in.essex> <out.essex>\n" unless @ARGV==2;

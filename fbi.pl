@@ -6,6 +6,9 @@ use FastaWriter;
 use GffTranscriptReader;
 use TempFilename;
 
+my $slurm=$ENV{"SLURM_JOB_ID"};
+print "SLURM $slurm\n";
+
 my $name=ProgramName::get();
 die "$name <model-file-or-dir> <ref.multi-fasta> <alt.multi-fasta> <ref.multi-gff> <out.fbi>\n" unless @ARGV==5;
 my ($modelDir,$refFasta,$altFasta,$refGFF,$outFBI)=@ARGV;
