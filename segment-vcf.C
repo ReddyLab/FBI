@@ -81,6 +81,7 @@ int Application::main(int argc,char *argv[])
     variants.push_back(Variant(chr,pos,pos+refLen));
   }
 
+  cout<<"finished successfully"<<endl;
   delete &f;
   return 0;
 }
