@@ -3150,8 +3150,6 @@ $(OBJ)/OrfAnalyzer.o:\
 		OrfAnalyzer.H
 	$(CC) $(CFLAGS) -o $(OBJ)/OrfAnalyzer.o -c \
 		OrfAnalyzer.C
-#---------------------------------------------------------
-
 #--------------------------------------------------------
 $(OBJ)/test.o:\
 		test.C
@@ -3163,4 +3161,16 @@ test: \
 	$(CC) $(LDFLAGS) -o test \
 		$(OBJ)/test.o \
 		$(LIBS)
-#---------------------------------------------
+#--------------------------------------------------------
+$(OBJ)/segment-vcf.o:\
+		segment-vcf.C
+	$(CC) $(CFLAGS) -o $(OBJ)/segment-vcf.o -c \
+		segment-vcf.C
+#---------------------------------------------------------
+segment-vcf: \
+		$(OBJ)/segment-vcf.o
+	$(CC) $(LDFLAGS) -o segment-vcf \
+		$(OBJ)/segment-vcf.o \
+		$(LIBS)
+#--------------------------------------------------------
+
