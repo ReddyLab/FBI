@@ -13,9 +13,10 @@ using namespace std;
 using namespace BOOM;
 
 struct Variant {
+  String chr;
   int begin;
   int end;
-  Variant(int b,int e) : begin(b), end(e) {}
+  Variant(const String &c,int b,int e) : chr(c), begin(b), end(e) {}
 };
 
 class Application {
@@ -72,12 +73,12 @@ int Application::main(int argc,char *argv[])
     if(line[0]=='#') continue;
     line.getFields(fields);
     if(fields.size()<10) continue;
-    String chr=fields[0];
+    const String &chr=fields[0];
     int pos=fields[1].asInt()-1;
-    String ref=fields[3];
+    const String &ref=fields[3];
     int refLen=ref.length();
     //cout<<chr<<"\t"<<pos<<"\t"<<pos+refLen<<endl;
-    variants.push_back(Variant(pos,pos+refLen));
+    variants.push_back(Variant(chr,pos,pos+refLen));
   }
 
   delete &f;
