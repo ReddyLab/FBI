@@ -19,11 +19,12 @@ while(1) {
   last unless $report;
   my $status=$report->findChild("status");
   next unless $status;
-  my $code=$status->getIthElem(0);
-  next unless $code;
-  if($code eq "bad-annotation") { ++$badAnnos; next }
-  if($code eq "too-many-vcf-errors") { ++$vcfErrors; next }
-  if($code eq "mapped") { ++$mapped; next }
+  if($status->hasDescendentOrDatum("bad-annotation"))
+     { ++$badAnnos; next }
+  if($status->hasDescendentOrDatum("too-many-vcf-errors"))
+     { ++$vcfErrors; next }
+  if($status->hasDescendentOrDatum("mapped"))
+     { ++$mapped; next }
   $report->print(\*OUT);
   print OUT "\n";
   ++$kept;
