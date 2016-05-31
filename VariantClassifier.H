@@ -32,7 +32,8 @@ public:
     int distanceToSpliceSite;
     VariantInfo() : distanceToSpliceSite(-1) {}
   };
-  VariantClassifier(const Vector<Variant> &,RefAlt,const GffTranscript &);
+  VariantClassifier(const Vector<Variant> &,RefAlt,const GffTranscript &,
+		    int chromLen);
   const Vector<VariantInfo> &getCDSvariants() const;
   const Vector<VariantInfo> &getSpliceSiteVariants() const;
   const Vector<VariantInfo> &getNearSpliceVariants() const;

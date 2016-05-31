@@ -13,7 +13,8 @@ using namespace BOOM;
 
 VariantClassifier::VariantClassifier(const Vector<Variant> &variants,
 				     RefAlt refAlt,
-				     const GffTranscript &transcript)
+				     const GffTranscript &transcript,
+				     int chromLen)
   : CLOSENESS_THRESHOLD(50)
 {
   GffTranscript t(transcript);
