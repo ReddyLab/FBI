@@ -25,7 +25,7 @@ while(1) {
   if($status->hasDescendentOrDatum("too-many-vcf-errors"))
      { ++$vcfErrors; next }
   if($status->hasDescendentOrDatum("mapped"))
-     { ++$mapped; next }
+     { ++$mapped; } #next }
   $report->print(\*OUT);
   print OUT "\n";
   ++$kept;
