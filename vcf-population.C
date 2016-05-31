@@ -71,7 +71,6 @@ protected:
   Vector<Population> populations;
   Vector<Individual> individuals;
   Map<String,int> indivToPopIndex;
-  //Vector<Variant> variants;
   Regex gzipRegex; // *.gz
   Regex dnaRegex;
   Regex CNregex; // <CN14>
@@ -258,7 +257,6 @@ bool Application::parseVariant(const Vector<String> &fields,File &outfile)
   int pos;
   if(!parseVariant(fields,chr,pos,ref,alt,id)) return false;
   for(int i=0 ; i<9 ; ++i) outfile.print(fields[i]+"\t");
-  //variants.push_back(Variant(chr,pos,ref,alt,id));
   return true;
 }
 

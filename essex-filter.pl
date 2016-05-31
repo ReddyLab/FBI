@@ -24,8 +24,10 @@ while(1) {
      { ++$badAnnos; next }
   if($status->hasDescendentOrDatum("too-many-vcf-errors"))
      { ++$vcfErrors; next }
-  if($status->hasDescendentOrDatum("mapped"))
-     { ++$mapped; } #next }
+  if($status->hasDescendentOrDatum("mapped")) {
+    ++$mapped;
+    next unless $status->hasCompositeChildren();
+  }
   $report->print(\*OUT);
   print OUT "\n";
   ++$kept;
