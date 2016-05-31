@@ -16,7 +16,9 @@ VariantClassifier::VariantClassifier(const Vector<Variant> &variants,
 				     const GffTranscript &transcript)
   : CLOSENESS_THRESHOLD(50)
 {
-  classify(variants,refAlt,transcript);
+  GffTranscript t(transcript);
+  if(transcript.getStrand()==REVERSE_STRAND) t.reverseComplement(chromLen);
+  classify(variants,refAlt,t);
 }
 
 

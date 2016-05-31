@@ -6,6 +6,7 @@ $|=1;
 
 my $slurm=$ENV{"SLURM_JOB_ID"};
 print "SLURM $slurm\n";
+system("hostname");
 
 my $name=ProgramName::get();
 die "$name <in.essex> <out.essex>\n" unless @ARGV==2;
