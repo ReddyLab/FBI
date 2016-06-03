@@ -27,10 +27,11 @@ public:
   };
   struct VariantInfo {
     Variant variant;
-    VariantType type; // SNP/INSERTION/DELETION
+    VariantType type; // SNP/INSERTION/DELETION/COMPLEX
     FunctionalElement elem;
     int distanceToSpliceSite;
     VariantInfo() : distanceToSpliceSite(-1) {}
+    bool indel() { return type==VARIANT_INSERTION || type==VARIANT_DELETION; }
   };
   VariantClassifier(const Vector<Variant> &,RefAlt,const GffTranscript &,
 		    int chromLen);
@@ -40,12 +41,13 @@ public:
   const Vector<VariantInfo> &getAll() const;
   const Vector<VariantInfo> &getUTRvariants() const;
   const Vector<VariantInfo> &getIntronVariants() const;
+  const Vector<VariantInfo> &getFrameshiftVariants() const;
   Essex::CompositeNode *makeVariantsNode() const;
   void setClosenessThreshold(int); // for near-splice-site variants
 private:
   int CLOSENESS_THRESHOLD;
   Vector<VariantInfo> cdsVariants, spliceSiteVariants, nearSpliceVariants;
-  Vector<VariantInfo> all, utrVariants, intronVariants;
+  Vector<VariantInfo> all, utrVariants, intronVariants, frameshiftVariants;
   void classify(const Vector<Variant> &,RefAlt,const GffTranscript &);
   VariantType getVariantType(const Variant &) const;
   void addVariants(const Vector<VariantInfo> &,const String &tag,

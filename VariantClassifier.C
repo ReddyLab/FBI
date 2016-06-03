@@ -33,6 +33,14 @@ VariantClassifier::getCDSvariants() const
 
 
 const Vector<VariantClassifier::VariantInfo> &
+VariantClassifier::getFrameshiftVariants() const
+{
+  return frameshiftVariants;
+}
+
+
+
+const Vector<VariantClassifier::VariantInfo> &
 VariantClassifier::getSpliceSiteVariants() const
 {
   return spliceSiteVariants;
@@ -126,7 +134,10 @@ void VariantClassifier::classify(const Vector<Variant> &variants,
     const VariantInfo &info=*cur;
     switch(info.elem) {
     case UTR: utrVariants.push_back(info); break;
-    case CDS: cdsVariants.push_back(info); break;
+    case CDS:
+      cdsVariants.push_back(info);
+      if(info.indel()) frameshiftVariants.push_back(info);
+      break;
     case INTRON:
       //intronVariants.push_back(info);
       if(info.distanceToSpliceSite>=0 && info.distanceToSpliceSite<
@@ -165,6 +176,7 @@ Essex::CompositeNode *VariantClassifier::makeVariantsNode() const
      nearSpliceVariants.size()==0 && utrVariants.size()==0) return NULL;
   Essex::CompositeNode *parent=new Essex::CompositeNode("variants");
   addVariants(cdsVariants,"CDS-variants",parent);
+  addVariants(frameshiftVariants,"frameshift-variants",parent);
   addVariants(spliceSiteVariants,"splice-site-variants",parent);
   addVariants(nearSpliceVariants,"near-splice-variants",parent);
   addVariants(utrVariants,"UTR-variants",parent);
