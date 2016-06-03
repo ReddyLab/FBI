@@ -11,9 +11,17 @@ my ($infile,$outfile)=@ARGV;
 my $parser=new EssexParser($infile);
 while(1) {
   my $root=$parser->nextElem();
+  last unless $root;
   my $fbi=new EssexFBI($root);
-  $transcriptID=$fbi->getTranscriptID();
-  print "$transcriptID\n";
+  my $transcriptID=$fbi->getTranscriptID();
+  my $status=$fbi->getStatusString();
+  print "$status\n";
+
+#   $transcript=$fbiReport->getMappedTranscript();
+#   $statusString=$fbiReport->getStatusString();
+#             status=mapped/splicing-changes/no-transcript
+#   $bool=$fbiReport->hasBrokenSpliceSite();
+#   $array=$fbiReport->getAltTranscripts();
 
   undef $root; undef $fbi;
 }
