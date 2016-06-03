@@ -437,12 +437,14 @@ void FBI::initEssex(ostream &osFBI,
   root->appendChild(status);
   if(cmd.option('e') && VCFerrors>cmd.optParm('e').asInt()) {
     status->append("too-many-vcf-errors");
+    /*
     if(!quiet) {
       if(!xmlFilename.empty()) writeXML();
       osFBI<<*root<<endl;
       osFBI<<"#===========================================================\n";
     }
     return -1;
+    */
   }
 }
 
