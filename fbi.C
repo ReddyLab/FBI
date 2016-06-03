@@ -258,7 +258,7 @@ int FBI::main(int argc,char *argv[])
  ****************************************************************/
 void FBI::flushOutput(ostream &osFBI,const bool &mapped)
 {
-  if(mapped && status && status->getNumChildren()<2 && quiet) return 0;
+  if(mapped && status && status->getNumChildren()<2 && quiet) return;
   if(!xmlFilename.empty()) writeXML();
   osFBI<<*root<<endl;
   osFBI<<"#===========================================================\n";
@@ -345,7 +345,7 @@ bool FBI::checkRefGene()
   if(!ProjectionChecker::geneIsWellFormed(*refTrans,refSeqStr,
 					  noStart,noStop,PTC,badSpliceSite,
 					  status,sensors,NMD_DISTANCE_PARM)) {
-    if(quiet) return -1;
+    if(quiet) return false;
     status->prepend("bad-annotation");
     return false;
   }
@@ -377,11 +377,12 @@ void FBI::checkProjection(const String &outGff,
   TranscriptSignals *signals=checker.findBrokenSpliceSites();
   if(!signals) {
     status->prepend("unequal-numbers-of-exons");
-    if(!xmlFilename.empty()) writeXML();
+    /*if(!xmlFilename.empty()) writeXML();
     osFBI<<*root<<endl;
     osFBI<<"#===========================================================\n";
     delete altTrans;
-    return -1;
+    */
+    return;
   }
 
   // Enumerate alternative structures
