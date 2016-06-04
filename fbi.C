@@ -369,7 +369,7 @@ void FBI::checkProjection(const String &outGff,
     altTrans->toEssex(reverseStrand,altSeqLen);
   altTransEssex->getTag()="mapped-transcript";
   VariantClassifier classifier(variants,VariantClassifier::ALT,*altTrans,
-			       altSeqLen);
+			       altSeqLen,reverseStrand);
   altTransEssex->append(classifier.makeVariantsNode());
   root->append(altTransEssex);
   ProjectionChecker checker(*refTrans,*altTrans,refSeqStr,refSeq,
@@ -432,7 +432,7 @@ void FBI::initEssex(ostream &osFBI,
     refTrans->toEssex(reverseStrand,refSeqLen);
   refTransEssex->getTag()="reference-transcript";
   VariantClassifier classifier(variants,VariantClassifier::REF,*refTrans,
-			       refSeqLen);
+			       refSeqLen,reverseStrand);
   refTransEssex->append(classifier.makeVariantsNode());
   root->append(refTransEssex);
   root->appendChild(status);
@@ -646,7 +646,7 @@ void FBI::processAltStructure(AlternativeStructure &s,
     node=s.transcript->toEssex();
   }
   VariantClassifier classifier(variants,VariantClassifier::ALT,
-			       *s.transcript,altSeqLen);
+			       *s.transcript,altSeqLen,reverseStrand);
   node->append(classifier.makeVariantsNode());
   s.reportCrypticSites(node,reverseStrand,altSeqLen);
   listStructureChanges(s,node,s.msg,msg2);

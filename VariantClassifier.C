@@ -14,11 +14,13 @@ using namespace BOOM;
 VariantClassifier::VariantClassifier(const Vector<Variant> &variants,
 				     RefAlt refAlt,
 				     const GffTranscript &transcript,
-				     int chromLen)
+				     int chromLen,bool revcomp)
   : CLOSENESS_THRESHOLD(50)
 {
   GffTranscript t(transcript);
-  if(transcript.getStrand()==REVERSE_STRAND) t.reverseComplement(chromLen);
+  if(revcomp) t.reverseComplement(chromLen);
+  //if(transcript.getStrand()==REVERSE_STRAND) t.reverseComplement(chromLen);
+  //cout<<(transcript.getStrand()==REVERSE_STRAND)<<"\t"<<(t.getStrand()==REVERSE_STRAND)<<endl;
   classify(variants,refAlt,t);
 }
 
@@ -136,7 +138,10 @@ void VariantClassifier::classify(const Vector<Variant> &variants,
     case UTR: utrVariants.push_back(info); break;
     case CDS:
       cdsVariants.push_back(info);
-      if(info.indel()) frameshiftVariants.push_back(info);
+      if(info.indel() && 
+	 abs(int(info.variant.alleles[0].length()-
+		 info.variant.alleles[1].length())) % 3 != 0)
+	frameshiftVariants.push_back(info);
       break;
     case INTRON:
       //intronVariants.push_back(info);

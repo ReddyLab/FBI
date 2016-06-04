@@ -34,7 +34,7 @@ public:
     bool indel() { return type==VARIANT_INSERTION || type==VARIANT_DELETION; }
   };
   VariantClassifier(const Vector<Variant> &,RefAlt,const GffTranscript &,
-		    int chromLen);
+		    int chromLen,bool revcomp);
   const Vector<VariantInfo> &getCDSvariants() const;
   const Vector<VariantInfo> &getSpliceSiteVariants() const;
   const Vector<VariantInfo> &getNearSpliceVariants() const;
