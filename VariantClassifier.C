@@ -134,6 +134,9 @@ void VariantClassifier::classify(const Vector<Variant> &variants,
   for(Vector<VariantInfo>::iterator cur=all.begin(), end=all.end() ; 
       cur!=end ; ++cur) {
     const VariantInfo &info=*cur;
+    if(info.distanceToSpliceSite>=0 && info.distanceToSpliceSite<=
+       CLOSENESS_THRESHOLD)
+      nearSpliceVariants.push_back(info);
     switch(info.elem) {
     case UTR: utrVariants.push_back(info); break;
     case CDS:
@@ -145,9 +148,6 @@ void VariantClassifier::classify(const Vector<Variant> &variants,
       break;
     case INTRON:
       //intronVariants.push_back(info);
-      if(info.distanceToSpliceSite>=0 && info.distanceToSpliceSite<
-	 CLOSENESS_THRESHOLD)
-	nearSpliceVariants.push_back(info);
       break;
     case SPLICE_SITE: spliceSiteVariants.push_back(info); break;
     case INTERGENIC: break;
