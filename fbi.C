@@ -380,8 +380,8 @@ void FBI::checkProjection(const String &outGff,
     /*if(!xmlFilename.empty()) writeXML();
     osFBI<<*root<<endl;
     osFBI<<"#===========================================================\n";
-    delete altTrans;
     */
+    delete altTrans;
     return;
   }
 
@@ -585,9 +585,11 @@ void FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
     }
   }
   else status->prepend("no-transcript");
+  /*
   if(!xmlFilename.empty()) writeXML();
   osFBI<<*root<<endl;
   osFBI<<"#===========================================================\n";
+  */
   delete altTrans;
 }
 
