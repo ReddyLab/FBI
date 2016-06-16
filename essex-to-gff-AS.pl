@@ -9,6 +9,7 @@ my $name=ProgramName::get();
 die "$name <in.essex> <out.gff> <allele#>\n" unless @ARGV==3;
 my ($infile,$outfile,$hap)=@ARGV;
 
+my %seen;
 open(OUT,">$outfile") || die "can't write to file: $outfile\n";
 my $parser=new EssexParser($infile);
 while(1) {
@@ -16,6 +17,8 @@ while(1) {
   last unless $root;
   my $fbi=new EssexFBI($root);
   my $transcriptID=$fbi->getTranscriptID();
+  next if $seen{$transcriptID};
+  $seen{$transcriptID}=1;
   my $status=$fbi->getStatusString();
   if($status eq "mapped") {
     my $transcript=$fbi->getMappedTranscript();
