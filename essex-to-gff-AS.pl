@@ -20,8 +20,10 @@ while(1) {
   next if $seen{$transcriptID};
   $seen{$transcriptID}=1;
   my $status=$fbi->getStatusString();
-  if($status eq "mapped") {
-    my $transcript=$fbi->getMappedTranscript();
+  #if($status->hasDescendentOrDatum("bad-annotation")) { next }
+  #if($status eq "mapped") {
+  my $transcript=$fbi->getMappedTranscript();
+  if($transcript) {
     my $id=$transcript->getTranscriptId();
     $id.="_$hap";
     $transcript->setTranscriptId($id);
@@ -30,7 +32,7 @@ while(1) {
     $transcript->setGeneId($id);
     print OUT $transcript->toGff();
   }
-  elsif($status eq "splicing-changes") {
+  if($status eq "splicing-changes") {
     my $transcripts=$fbi->getAltTranscripts();
     my $n=@$transcripts;
     for(my $i=0 ; $i<$n ; ++$i) {

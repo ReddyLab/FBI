@@ -13,12 +13,15 @@ die "$name <in.essex> <out.essex>\n" unless @ARGV==2;
 my ($infile,$outfile)=@ARGV;
 
 open(OUT,">$outfile") || die "can't write file: $outfile\n";
-my $badAnnos=0; my $vcfErrors=0; my $mapped=0; my $kept=0;
+my $badAnnos=0; my $vcfErrors=0; my $mapped=0; my $kept=0; my %seen;
 my $parser=new EssexParser($infile);
 while(1) {
   my $report=$parser->nextElem();
   last unless $report;
   my $status=$report->findChild("status");
+  my $transcriptID=$status->getAttribute("transcript-ID");
+  next if $seen{$transcriptID};
+  $seen{$transcriptID}=1;
   next unless $status;
   if($status->hasDescendentOrDatum("bad-annotation"))
      { ++$badAnnos; next }
