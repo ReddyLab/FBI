@@ -531,11 +531,12 @@ void FBI::handleCoding(GffTranscript *altTrans,
     if(refStop>0) {
       const int altStop=altProtein.findFirst("*");
       if(altStop>-1 && altStop<refStop) {
-	//int matches, len;
-	//alignProteins(refProtein,altProtein,matches);
 	Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
-	fate->append("protein-truncation");
-	//percentMatch(matches,refProtein.length(),altProtein.length(),fate);
+	Essex::CompositeNode *truncation=
+	  new Essex::CompositeNode("protein-truncation");
+	int diff=refStop-altStop;
+	truncation->append(String("")+diff+"aa");
+	fate->append(truncation);
 	status->append(fate);
       }
     }
