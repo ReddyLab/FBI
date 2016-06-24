@@ -480,21 +480,22 @@ void FBI::handleCoding(GffTranscript *altTrans,
     status->append(changeNode);
   }
 
+  // Translate
   String refProtein, altProtein;
   checker.translate(*refTrans,*altTrans,refProtein,altProtein);
   
   int ejcDistance;
-  switch(nmd.predict(*altTrans,altSeqStr,ejcDistance)) {
+  NMD_TYPE nmdType=nmd.predict(*altTrans,altSeqStr,ejcDistance);
+  switch(nmdType) {
   case NMD_NONE: break;
   case NMD_NMD: {
-    //status->append("premature-stop","NMD"); break;
     Essex::CompositeNode *stopNode=
       new Essex::CompositeNode("premature-stop");
     stopNode->append("NMD");
     stopNode->append("EJC-distance",ejcDistance);
     status->append(stopNode);
   } break;
-  case NMD_TRUNCATION:  { // ### this is disabled for now
+    /*case NMD_TRUNCATION:  { // ### this is disabled for now
     int matches, len;
     alignProteins(refProtein,altProtein,matches);
     Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
@@ -502,7 +503,7 @@ void FBI::handleCoding(GffTranscript *altTrans,
     percentMatch(matches,refProtein.length(),altProtein.length(),fate);
     status->append(fate);
   }
-    break;
+  break;*/
   case NMD_NO_STOP: 
     if(refTrans->hasUTR3()) status->append("nonstop-decay");
     break;
@@ -511,7 +512,7 @@ void FBI::handleCoding(GffTranscript *altTrans,
 
   // Check for start codon
   if(startCodonMsg) status->append(startCodonMsg);
-  
+
   // Check for frameshifts
   if(refProtein!=altProtein) {
     int matches, len;
@@ -522,6 +523,22 @@ void FBI::handleCoding(GffTranscript *altTrans,
     Labeling altLab(altSeqLen);
     computeLabeling(*altTrans,altLab);
     checker.checkFrameshifts(projectedLab,altLab,status);
+  }
+
+  // Check for premature stop codon
+  if(nmdType==NMD_NONE) {
+    const int refStop=refProtein.findFirst("*");
+    if(refStop>0) {
+      const int altStop=altProtein.findFirst("*");
+      if(altStop>-1 && altStop<refStop) {
+	//int matches, len;
+	//alignProteins(refProtein,altProtein,matches);
+	Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
+	fate->append("protein-truncation");
+	//percentMatch(matches,refProtein.length(),altProtein.length(),fate);
+	status->append(fate);
+      }
+    }
   }
 }
 
