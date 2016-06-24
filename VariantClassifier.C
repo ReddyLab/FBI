@@ -19,8 +19,6 @@ VariantClassifier::VariantClassifier(const Vector<Variant> &variants,
 {
   GffTranscript t(transcript);
   if(revcomp) t.reverseComplement(chromLen);
-  //if(transcript.getStrand()==REVERSE_STRAND) t.reverseComplement(chromLen);
-  //cout<<(transcript.getStrand()==REVERSE_STRAND)<<"\t"<<(t.getStrand()==REVERSE_STRAND)<<endl;
   classify(variants,refAlt,t);
 }
 

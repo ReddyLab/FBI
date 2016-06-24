@@ -117,6 +117,7 @@ unlink($fbiTemp); unlink($oneGeneGFF); unlink($tempRevcomp); unlink($gffTemp);
 #close(LABELING);
 close(FBI);
 system("date");
+print "[done]";
 
 sub System
 {
