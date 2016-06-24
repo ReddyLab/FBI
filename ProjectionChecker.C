@@ -424,8 +424,11 @@ bool ProjectionChecker::checkFrameshifts(const Labeling &refLab,
     const GeneModelLabel ref=refLab[i];
     if(isExon(ref)) {
       GeneModelLabel alt=altLab[i];
-      if(isExon(alt) && getExonPhase(alt)==getExonPhase(ref)) ++phaseMatches;
-      else ++phaseMismatches;
+      if(isExon(alt))
+	if(getExonPhase(alt)==getExonPhase(ref)) ++phaseMatches;
+	else ++phaseMismatches;
+      /*if(isExon(alt) && getExonPhase(alt)==getExonPhase(ref)) ++phaseMatches;
+	else ++phaseMismatches;*/
     }
   }
   if(phaseMismatches>0) {
