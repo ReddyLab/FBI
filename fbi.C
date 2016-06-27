@@ -113,6 +113,11 @@ private:
   float alignProteins(const String &refStr,
 		      const String &altStr,
 		      int &matches);
+  float alignProteins(const String &refStr,
+		      const String &altStr,
+		      int &matches,
+		      int &projectedStop,
+		      int &actualStop);
   void percentMatch(int matches,
 		    int refLen,
 		    int altLen,
@@ -513,10 +518,11 @@ void FBI::handleCoding(GffTranscript *altTrans,
   // Check for start codon
   if(startCodonMsg) status->append(startCodonMsg);
 
-  // Check for frameshifts
+  // Check for frameshifts and amino acid differences
+  int projectedStop=-1, actualStop=-1;
   if(refProtein!=altProtein) {
-    int matches, len;
-    alignProteins(refProtein,altProtein,matches);
+    int matches;
+    alignProteins(refProtein,altProtein,matches,projectedStop,actualStop);
     Essex::CompositeNode *fate=new Essex::CompositeNode("protein-differs");
     percentMatch(matches,refProtein.length(),altProtein.length(),fate);
     status->append(fate);
@@ -527,18 +533,18 @@ void FBI::handleCoding(GffTranscript *altTrans,
 
   // Check for premature stop codon
   if(nmdType==NMD_NONE) {
-    const int refStop=refProtein.findFirst('*');
-    if(refStop>0) {
-      const int altStop=altProtein.findFirst('*');
-      if(altStop>-1 && altStop<refStop) {
-	Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
-	Essex::CompositeNode *truncation=
-	  new Essex::CompositeNode("protein-truncation");
-	int diff=refStop-altStop;
-	truncation->append(String("")+diff+"aa");
-	fate->append(truncation);
-	status->append(fate);
-      }
+    if(projectedStop<0) { // The alignment wasn't performed
+      int matches;
+      alignProteins(refProtein,altProtein,matches,projectedStop,actualStop);
+    }
+    if(actualStop>=0 && projectedStop>=0 && actualStop<projectedStop) {
+      Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
+      Essex::CompositeNode *truncation=
+	new Essex::CompositeNode("protein-truncation");
+      int diff=projectedStop-actualStop;
+      truncation->append(String("")+diff+"aa");
+      fate->append(truncation);
+      status->append(fate);
     }
   }
 }
@@ -1120,6 +1126,33 @@ float FBI::alignProteins(const String &refStr,const String &altStr,
   Alignment *alignment=aligner.fullAlignment();
   matches=alignment->countMatches();
   float score=float(matches)/refStr.length();
+  delete alignment;
+  return score;
+}
+
+
+
+/****************************************************************
+ FBI::alignProteins()
+ ****************************************************************/
+float FBI::alignProteins(const String &refStr,const String &altStr,
+			 int &matches,int &projectedStop,int &actualStop)
+{
+  if(refStr.length()==0 || altStr.length()==0) return 0.0;
+  const AminoAlphabet &alphabet=AminoAlphabet::global();
+  Sequence refSeq(refStr,alphabet), altSeq(altStr,alphabet);
+  BandedSmithWaterman<float> aligner(alphabet,refSeq,altSeq,*substMatrix,
+				     openPenalty,extendPenalty,bandwidth);
+  Alignment *alignment=aligner.fullAlignment();
+  matches=alignment->countMatches();
+  float score=float(matches)/refStr.length();
+  CigarString cigar(alignment->getCigarString());
+  CigarAlignment &cigarAlignment=*cigar.getAlignment();
+  int refStop=refStr.findFirst('*');
+  if(refStop<0) projectedStop=-1;
+  else projectedStop=cigarAlignment[refStop];
+  actualStop=altStr.findFirst('*');
+  delete &cigarAlignment;
   delete alignment;
   return score;
 }
