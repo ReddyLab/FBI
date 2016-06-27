@@ -92,7 +92,7 @@ while(1) {
     my $command="$FBI/fbi $QUIET $errorsFlag $revFlag $modelFile $oneGeneGFF $refFastaTemp $altFastaTemp $gffTemp $fbiTemp";
     print "$command\n" if $DEBUG;
     my $err=`$command`;
-    #print "$err\n";
+    print "$err\n";
     if($err=~/abort/ || $err=~/INTERNAL ERROR/ || $err=~/no transcripts/
        || $err=~/no such file/) { exit }
     die "FBI terminated abnormally:\n$command" 

@@ -113,11 +113,6 @@ private:
   float alignProteins(const String &refStr,
 		      const String &altStr,
 		      int &matches);
-  float alignProteins(const String &refStr,
-		      const String &altStr,
-		      int &matches,
-		      int &refStop,
-		      int &altStopProjectedToRef);
   void percentMatch(int matches,
 		    int refLen,
 		    int altLen,
@@ -519,10 +514,10 @@ void FBI::handleCoding(GffTranscript *altTrans,
   if(startCodonMsg) status->append(startCodonMsg);
 
   // Check for frameshifts and amino acid differences
-  int refStop=-1, altStopOnRef=-1;
-  if(refProtein!=altProtein) {
+  const bool proteinsDiffer=refProtein!=altProtein;
+  if(proteinsDiffer) {
     int matches;
-    alignProteins(refProtein,altProtein,matches,refStop,altStopOnRef);
+    alignProteins(refProtein,altProtein,matches);
     Essex::CompositeNode *fate=new Essex::CompositeNode("protein-differs");
     percentMatch(matches,refProtein.length(),altProtein.length(),fate);
     status->append(fate);
@@ -532,12 +527,14 @@ void FBI::handleCoding(GffTranscript *altTrans,
   }
 
   // Check for premature stop codon
-  if(nmdType==NMD_NONE) {
-    if(refStop<0) { // The alignment wasn't performed
-      int matches;
-      alignProteins(refProtein,altProtein,matches,refStop,altStopOnRef);
-    }
+  if(nmdType==NMD_NONE && proteinsDiffer && refProtein.findFirst('*')>0 &&
+     altProtein.findFirst('*')>0) {
+    int refStop=refTrans->stopCodonGlobalCoord();
+    int altStop=altTrans->stopCodonGlobalCoord();
+    int altStopOnRef=(*revAlignment).mapApproximate(altStop,DIR_LEFT);
+    cout<<"refStop="<<refStop<<" altStop="<<altStop<<" altOnRef="<<altStopOnRef<<endl;
     if(altStopOnRef>=0 && refStop>=0 && altStopOnRef<refStop) {
+      cout<<"alt="<<altStopOnRef<<" ref="<<refStop<<endl;
       Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
       Essex::CompositeNode *truncation=
 	new Essex::CompositeNode("protein-truncation");
@@ -1126,34 +1123,6 @@ float FBI::alignProteins(const String &refStr,const String &altStr,
   Alignment *alignment=aligner.fullAlignment();
   matches=alignment->countMatches();
   float score=float(matches)/refStr.length();
-  delete alignment;
-  return score;
-}
-
-
-
-/****************************************************************
- FBI::alignProteins()
- ****************************************************************/
-float FBI::alignProteins(const String &refStr,const String &altStr,
-			 int &matches,int &refStop,int &altStop)
-{
-  if(refStr.length()==0 || altStr.length()==0) return 0.0;
-  const AminoAlphabet &alphabet=AminoAlphabet::global();
-  Sequence refSeq(refStr,alphabet), altSeq(altStr,alphabet);
-  BandedSmithWaterman<float> aligner(alphabet,refSeq,altSeq,*substMatrix,
-				     openPenalty,extendPenalty,bandwidth);
-  Alignment *alignment=aligner.fullAlignment();
-  matches=alignment->countMatches();
-  float score=float(matches)/refStr.length();
-  CigarString cigar(alignment->getCigarString());
-  CigarAlignment &cigarAlignmentFwd=*cigar.getAlignment();
-  CigarAlignment &cigarAlignment=*cigarAlignmentFwd.invert(altStr.length());
-  delete &cigarAlignmentFwd;
-  refStop=refStr.findFirst('*');
-  altStop=altStr.findFirst('*');
-  if(altStop>=0) altStop=cigarAlignment[altStop];
-  delete &cigarAlignment;
   delete alignment;
   return score;
 }
