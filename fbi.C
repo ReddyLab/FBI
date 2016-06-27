@@ -800,7 +800,7 @@ void FBI::appendBrokenSignals(const TranscriptSignals *signals)
     else INTERNAL_ERROR;
     Essex::CompositeNode *node=new Essex::CompositeNode(tag);
     int pos=signal.getPos();
-    if(reverseStrand) pos=altSeqLen-pos-1;
+    if(reverseStrand) pos=altSeqLen-pos-2; // -2 is for the signal length!
     node->append(pos);
     Vector<String> fields; signal.seq.getFields(fields);
     for(Vector<String>::iterator cur=fields.begin(), end=fields.end() ; 
@@ -974,8 +974,12 @@ void FBI::mapTranscript(const String &outfile)
       if(startCodon>0) {
 	Essex::CompositeNode *newNode
 	  =new Essex::CompositeNode("start-codon-change");
-	newNode->append("from",mappedStartCodon);
-	newNode->append("to",startCodon); 
+	if(reverseStrand) {
+	  newNode->append("from",altSeqLen-mappedStartCodon);
+	  newNode->append("to",altSeqLen-startCodon); }
+	else {
+	  newNode->append("from",mappedStartCodon);
+	  newNode->append("to",startCodon); }
 	startCodonMsg=newNode; }
       else startCodonMsg=new Essex::StringNode("no-start-codon");
     if(startCodon>=0)
