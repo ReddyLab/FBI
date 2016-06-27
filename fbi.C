@@ -527,9 +527,9 @@ void FBI::handleCoding(GffTranscript *altTrans,
 
   // Check for premature stop codon
   if(nmdType==NMD_NONE) {
-    const int refStop=refProtein.findFirst("*");
+    const int refStop=refProtein.findFirst('*');
     if(refStop>0) {
-      const int altStop=altProtein.findFirst("*");
+      const int altStop=altProtein.findFirst('*');
       if(altStop>-1 && altStop<refStop) {
 	Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
 	Essex::CompositeNode *truncation=
