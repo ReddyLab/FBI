@@ -538,7 +538,7 @@ void FBI::handleCoding(GffTranscript *altTrans,
       Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
       Essex::CompositeNode *truncation=
 	new Essex::CompositeNode("protein-truncation");
-      int diff=refStop-altStopOnRef;
+      int diff=(refStop-altStopOnRef+2)/3;
       truncation->append(String("")+diff+"aa");
       fate->append(truncation);
       status->append(fate);
