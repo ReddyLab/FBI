@@ -535,9 +535,7 @@ void FBI::handleCoding(GffTranscript *altTrans,
     int refStop=refTrans->stopCodonGlobalCoord();
     int altStop=altTrans->stopCodonGlobalCoord();
     int altStopOnRef=(*revAlignment).mapApproximate(altStop,DIR_LEFT);
-    //cout<<"refStop="<<refStop<<" altStop="<<altStop<<" altOnRef="<<altStopOnRef<<endl;
     if(altStopOnRef>=0 && refStop>=0 && altStopOnRef<refStop) {
-      //cout<<"alt="<<altStopOnRef<<" ref="<<refStop<<endl;
       Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
       Essex::CompositeNode *truncation=
 	new Essex::CompositeNode("protein-truncation");
