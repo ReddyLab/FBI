@@ -145,6 +145,9 @@ private:
   void initEssex(ostream &osFBI,
 		 const CommandLine &);
   void flushOutput(ostream &osFBI,const bool &mapped);
+  int getTruncationLength(const GffTranscript &transcript,
+			  int PTC,
+			  int stop);
 };
 
 
@@ -538,12 +541,36 @@ void FBI::handleCoding(GffTranscript *altTrans,
       Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
       Essex::CompositeNode *truncation=
 	new Essex::CompositeNode("protein-truncation");
-      int diff=(refStop-altStopOnRef+2)/3;
+      const int diff=getTruncationLength(*refTrans,altStopOnRef,refStop);
       truncation->append(String("")+diff+"aa");
       fate->append(truncation);
       status->append(fate);
     }
   }
+}
+
+
+
+/****************************************************************
+ FBI::getTruncationLength()
+ ****************************************************************/
+int FBI::getTruncationLength(const GffTranscript &transcript,int PTC,int stop)
+{
+  int nuc=0; bool accumulating=false;
+  for(Vector<GffExon*>::const_iterator cur=transcript.getExons(), end=
+	transcript.getExonsEnd() ; cur!=end ; ++cur) {
+    GffExon &exon=**cur;
+    if(exon.contains(PTC)) {
+      accumulating=true;
+      if(exon.contains(stop)) { nuc=stop-PTC; break; }
+      else nuc=exon.getEnd()-PTC;
+    }
+    else if(accumulating) {
+      if(exon.contains(stop)) { nuc+=stop-exon.getBegin(); break; }
+      else nuc+=exon.getEnd()-exon.getBegin();
+    }
+  }
+  return (nuc+2)/3;
 }
 
 
