@@ -554,6 +554,8 @@ void FBI::handleCoding(GffTranscript *altTrans,
  ****************************************************************/
 int FBI::getTruncationLength(const GffTranscript &transcript,int PTC,int stop)
 {
+  // This works for the forward strand only!
+
   int nuc=0; bool accumulating=false;
   for(Vector<GffExon*>::const_iterator cur=transcript.getExons(), end=
 	transcript.getExonsEnd() ; cur!=end ; ++cur) {
