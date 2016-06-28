@@ -142,44 +142,29 @@ for(my $i=0 ; $i<$numGenes ; ++$i) {
   die unless -e $altGeneFasta;
   die if -z $altGeneFasta;
   my $fastaReader=new FastaReader($altGeneFasta);
-print "trace 1\n";
   while(1) {
-print "trace 2\n";
     my ($def,$seq)=$fastaReader->nextSequence();
-print "trace 3\n";
     last unless $def;
-print "trace 4\n";
     $def=~/>\S+\s+\/individual=(\S+)\s+\/allele=(\d+)\s+\/locus=(\S+)\s+\/coord=(\S+)\s+\/cigar=(\S+)\s+\/variants=(\S*)/
       || die "Can't parse defline: $def\n";
-print "trace 5\n";
     my ($indivID,$alleleNum,$geneID,$coord,$cigar,$variants)=
       ($1,$2,$3,$4,$5,$6);
-print "trace 6\n";
     if($keepIDs{$indivID}) {
-print "trace 7\n";
       my $file=$fastaFiles{$indivID}->[$alleleNum-1];
       my $key="$indivID $geneID";
       my $numWarn=0+$warnings{$key};
       my $numErr=0+$errors{$key};
-print "trace 8\n";
       open(FASTA,">>$file") || die $file;
-print "trace 9\n";
       $def=">${geneID}_$alleleNum /coord=$coord /margin=$MARGIN_AROUND_GENE /cigar=$cigar /warnings=$numWarn /errors=$numErr /variants=$variants";
       $fastaWriter->addToFasta($def,$seq,\*FASTA);
-print "trace 10\n";
       close(FASTA);
-print "trace 11\n";
     }
-print "trace 12\n";
     undef $seq; undef $def;
     undef $indivID; undef $alleleNum ; undef $geneID ; undef $coord;
   }
-print "trace 13\n";
   $fastaReader->close();
-print "trace 14\n";
   #last if $DEBUG;
 }
-print "trace 15\n";
 close(GFF) unless $NO_GFF;
 my @skipped=keys %skipped;
 foreach my $skipped (@skipped) { print "warning: skipped $skipped\n" }
