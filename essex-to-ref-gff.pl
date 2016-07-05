@@ -19,7 +19,7 @@ while(1) {
   my $transcriptID=$fbi->getTranscriptID();
   next if $seen{$transcriptID};
   $seen{$transcriptID}=1;
-  my $status=$fbi->getStatusString();
+  #my $status=$fbi->getStatusString();
   #if($status->hasDescendentOrDatum("bad-annotation")) { next }
   #next unless if($status eq "mapped");
   my $transcript=$fbi->getRefTranscript();
