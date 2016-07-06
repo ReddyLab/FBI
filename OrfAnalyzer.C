@@ -123,6 +123,7 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   oldOrfLen=altTrans.getCDSlength();
   int oldBegin, oldEnd;
   altTrans.getCDSbeginEnd(oldBegin,oldEnd);
+  cout<<"positions: "<<altGenomicStart<<" "<<oldBegin<<endl;
   if(altGenomicStart>=oldBegin) { delete altORF; return NULL; }
 
   // If that upstream start codon was previously intronic, it's a good bet
