@@ -54,6 +54,7 @@ int OrfAnalyzer::findStartCodon(const String &transcript,
   for(int pos=0 ; pos<last ; ++pos) {
     if(!sensor->consensusOccursAt(transcript,pos+offset)) continue;
     startCodonScore=sensor->getLogP(seq,transcript,pos);
+    cout<<startCodonSCore<<" versus "<<cutoff<<endl;
     if(startCodonScore>=cutoff) return pos+offset;
   }
   return -1;
