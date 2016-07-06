@@ -118,7 +118,7 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   int altGenomicStart;
   GffTranscript *altORF=findORF(altTrans,altStr,altSeq,newStartCodonScore,
 				altGenomicStart,newOrfLen);
-  cout<<"found upstream ORF"<<endl;
+  if(altORF) cout<<"found upstream ORF"<<endl;
   if(!altORF) return NULL;
   oldOrfLen=altTrans.getCDSlength();
   int oldBegin, oldEnd;
