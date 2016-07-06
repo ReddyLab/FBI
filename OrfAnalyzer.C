@@ -50,7 +50,7 @@ int OrfAnalyzer::findStartCodon(const String &transcript,
   const int offset=sensor->getConsensusOffset();
   const int L=transcript.length();
   const float cutoff=sensor->getCutoff();
-  Sequence seq(transcript,PureDnaAlphabet::global());
+  Sequence seq(transcript,DnaAlphabet::global());
   const int last=L-footprint;
   for(int pos=0 ; pos<last ; ++pos) {
     if(!sensor->consensusOccursAt(transcript,pos+offset)) continue;
