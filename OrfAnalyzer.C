@@ -30,6 +30,8 @@ GffTranscript *OrfAnalyzer::findORF(const GffTranscript &original,
   transcript->loadSequence(genomeStr);
   String RNA=original.getFullSequence();
   int splicedStartPos=findStartCodon(RNA,startCodonScore);
+  cout<<RNA<<endl;
+  cout<<splicedStartPos<<endl;
   if(splicedStartPos<0) { delete transcript; return NULL; }
   genomicStartPos=transcript->mapToGenomicCoords(splicedStartPos);
   transcript->splitUTRandCDS(genomeStr,genomicStartPos,sensors.stopCodons);
