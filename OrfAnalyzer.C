@@ -6,7 +6,6 @@
  ****************************************************************/
 #include <iostream>
 #include "OrfAnalyzer.H"
-//#include "BOOM/PureDnaAlphabet.H"
 #include "BOOM/DnaAlphabet.H"
 #include "BOOM/CodonIterator.H"
 using namespace std;
@@ -31,10 +30,9 @@ GffTranscript *OrfAnalyzer::findORF(const GffTranscript &original,
   transcript->loadSequence(genomeStr);
   String RNA=original.getFullSequence();
   int splicedStartPos=findStartCodon(RNA,startCodonScore);
-  cout<<RNA<<endl;
-  cout<<splicedStartPos<<endl;
   if(splicedStartPos<0) { delete transcript; return NULL; }
   genomicStartPos=transcript->mapToGenomicCoords(splicedStartPos);
+  transcript->forgetCDS();
   transcript->splitUTRandCDS(genomeStr,genomicStartPos,sensors.stopCodons);
   orfLength=transcript->getCDSlength();
   return transcript;
@@ -45,8 +43,11 @@ GffTranscript *OrfAnalyzer::findORF(const GffTranscript &original,
 int OrfAnalyzer::findStartCodon(const String &transcript,
 				float &startCodonScore)
 {
+  // ### DEBUGGING
   //SignalSensor *sensor=sensors.startCodonSensor;
   SignalSensor *sensor=sensors.shortStartSensor;
+  // ###
+
   const int footprint=sensor->getContextWindowLength();
   const int offset=sensor->getConsensusOffset();
   const int L=transcript.length();
@@ -55,9 +56,8 @@ int OrfAnalyzer::findStartCodon(const String &transcript,
   const int last=L-footprint;
   for(int pos=0 ; pos<last ; ++pos) {
     if(!sensor->consensusOccursAt(transcript,pos+offset)) continue;
-    cout<<transcript.substring(pos+offset,footprint);
     startCodonScore=sensor->getLogP(seq,transcript,pos);
-    cout<<startCodonScore<<" versus "<<cutoff<<endl;
+    //cout<<startCodonScore<<" versus "<<cutoff<<endl;
     if(startCodonScore>=cutoff) return pos+offset;
   }
   return -1;
