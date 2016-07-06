@@ -32,10 +32,8 @@ GffTranscript *OrfAnalyzer::findORF(const GffTranscript &original,
   int splicedStartPos=findStartCodon(RNA,startCodonScore);
   if(splicedStartPos<0) { delete transcript; return NULL; }
   genomicStartPos=transcript->mapToGenomicCoords(splicedStartPos);
-  TRACE
   transcript->forgetCDS();
   transcript->splitUTRandCDS(genomeStr,genomicStartPos,sensors.stopCodons);
-TRACE
   orfLength=transcript->getCDSlength();
   return transcript;
 }
