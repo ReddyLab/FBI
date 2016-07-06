@@ -63,9 +63,9 @@ int Application::main(int argc,char *argv[])
 {
   // Process command line
   CommandLine cmd(argc,argv,"g:");
-  if(cmd.numArgs()!=3)
+  if(cmd.numArgs()!=4)
     throw String("\n\
-segment-vcf [options] <in.vcf> <binsize> <out.bed>\n\
+segment-vcf [options] <in.vcf> <binsize> <chrom-length> <out.bed>\n\
     -g file : also respect features given in GFF file\n\
 \n\
     * VCF file must be for a single chromosome only\n\
@@ -73,7 +73,8 @@ segment-vcf [options] <in.vcf> <binsize> <out.bed>\n\
 ");
   const String &infile=cmd.arg(0);
   const int binSize=cmd.arg(1).asInt();
-  const String &outfile=cmd.arg(2);
+  const int chromLen=cmd.arg(2).asInt();
+  const String &outfile=cmd.arg(3);
 
   // Process optional GFF file
   haveGFF=cmd.option('g');
@@ -84,11 +85,17 @@ segment-vcf [options] <in.vcf> <binsize> <out.bed>\n\
   }
 
   // Process VCF file
+  ofstream os(outfile.c_str());
   VcfReader reader(infile);
   Variant variant; Vector<Genotype> genotype;
+  int featureIndex=0, prevBoundary=0, nextBoundary=0;
   while(reader.nextVariant(variant,genotype)) {
+    nextBoundary=prevBoundary+binSize;
+    if(nextBoundary>chromLen) { nextBoundary=chromLen; break; }
     
   }
+  if(nextBoundary>prevBoundary)
+    os<<chr<<"\t"<<prevBoundary<<"\t"<<nextBoundary<<endl;
 
   cout<<"[done]"<<endl;
   return 0;
