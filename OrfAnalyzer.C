@@ -59,7 +59,6 @@ int OrfAnalyzer::findStartCodon(const String &transcript,
   for(int pos=0 ; pos<last ; ++pos) {
     if(!sensor->consensusOccursAt(transcript,pos+offset)) continue;
     startCodonScore=sensor->getLogP(seq,transcript,pos);
-    //cout<<startCodonScore<<" versus "<<cutoff<<endl;
     if(startCodonScore>=cutoff) return pos+offset;
   }
   return -1;
@@ -126,12 +125,10 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   int altGenomicStart;
   GffTranscript *altORF=findORF(altTrans,altStr,altSeq,newStartCodonScore,
 				altGenomicStart,newOrfLen);
-  if(altORF) cout<<"found upstream ORF"<<endl;
   if(!altORF) return NULL;
   oldOrfLen=altTrans.getCDSlength();
   int oldBegin, oldEnd;
   altTrans.getCDSbeginEnd(oldBegin,oldEnd);
-  cout<<"positions: "<<altGenomicStart<<" "<<oldBegin<<endl;
   if(altGenomicStart>=oldBegin) { delete altORF; return NULL; }
 
   // If that upstream start codon was previously intronic, it's a good bet
@@ -139,8 +136,6 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   const int refGenomicStart=altToRef.mapApproximate(altGenomicStart,DIR_RIGHT);
   const int refLocalStart=refTrans.mapToTranscriptCoords(refGenomicStart);
   bool change=refLocalStart<0; // -1 means unmapped due to being intronic
-
-  cout<<"change="<<change<<endl;
 
   // If this start codon existed but had a poor score in the reference,
   // it may indeed indicate a functional change
@@ -160,16 +155,12 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
     }
   }
 
-  cout<<"now change="<<change<<endl;
-
   // Compute oldStartCodonScore 
   const int altLocal=altTrans.mapToTranscriptCoords(oldBegin);
   GffTranscript altCopy(altTrans);
   altCopy.loadSequence(altStr);
   String altRNA=altCopy.getFullSequence();
   oldStartCodonScore=sensor->getLogP(altSeq,altStr,altLocal-offset);
-  cout<<"old score = "<<oldStartCodonScore<<endl;
-  cout<<"new score = "<<newStartCodonScore<<endl;
 
   // If the start codon existed previously but was in a different frame,
   // it's again worth reporting as possibly impacting function
@@ -182,7 +173,6 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   int newFrame=(oldLocal-newLocal)%3;
   if(newFrame==0 && oldFrame!=0) change=true;
   //if(newFrame!=0 && oldFrame==0) change=true;
-  cout<<"change3="<<change<<endl;
 
   if(change) {
     altORF->computePhases();
