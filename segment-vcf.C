@@ -13,15 +13,18 @@
 #include "BOOM/GffReader.H"
 #include "BOOM/VectorSorter.H"
 #include "BOOM/Interval.H"
+#include "BOOM/BitSet.H"
 using namespace std;
 using namespace BOOM;
 
+/*
 class GffComparator : public Comparator<Interval> {
 public:
   bool equal(Interval &a,Interval &b) { return a.getBegin()==b.getBegin(); }
   bool greater(Interval &a,Interval &b) { return a.getBegin()>b.getBegin(); }
   bool less(Interval &a,Interval &b) { return a.getBegin()<b.getBegin(); }
 };
+*/
 
 class Application {
 public:
@@ -29,10 +32,11 @@ public:
   int main(int argc,char *argv[]);
 private:
   bool haveGFF;
-  Vector<Interval> features;
+  //Vector<Interval> features;
   String getChrom(const String &vcfFilename);
   void loadGFF(const String &filename,const String &chr);
-  void sortGFF();
+  //void sortGFF();
+  void emit(const String &chr,int prevBoundary,int nextBoundary);
 };
 
 
@@ -87,15 +91,20 @@ segment-vcf [options] <in.vcf> <binsize> <chrom-length> <out.bed>\n\
   // Process VCF file
   ofstream os(outfile.c_str());
   VcfReader reader(infile);
-  Variant variant; Vector<Genotype> genotype;
+  Variant prevVariant, nextVariant; Vector<Genotype> genotype;
   int featureIndex=0, prevBoundary=0, nextBoundary=0;
-  while(reader.nextVariant(variant,genotype)) {
+  reader.nextVariant(prevVariant,genotype);
+  while(reader.nextVariant(nextVariant,genotype)) {
     nextBoundary=prevBoundary+binSize;
     if(nextBoundary>chromLen) { nextBoundary=chromLen; break; }
-    
+    if(nextVariant.getBegin()>nextBoundary) {
+      if(nextBoundary<prevVariant.getEnd()) nextBoundary=prevVariant.getEnd();
+      
+    }
+    prevVariant=nextVariant;
   }
   if(nextBoundary>prevBoundary)
-    os<<chr<<"\t"<<prevBoundary<<"\t"<<nextBoundary<<endl;
+    emit(os,chr,prevBoundary,nextBoundary);
 
   cout<<"[done]"<<endl;
   return 0;
@@ -133,6 +142,12 @@ void Application::sortGFF()
   sorter.sortAscendInPlace();
 }
 
+
+
+void Application::emit(const String &chr,int prevBoundary,int nextBoundary)
+{
+  os<<chr<<"\t"<<prevBoundary<<"\t"<<nextBoundary<<endl;
+}
 
 
 
