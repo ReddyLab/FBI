@@ -81,12 +81,14 @@ segment-vcf [options] <in.vcf> <binsize> <chrom-length> <out.bed>\n\
   const int binSize=cmd.arg(1).asInt();
   const int chromLen=cmd.arg(2).asInt();
   const String &outfile=cmd.arg(3);
+
+  // Some initialization
   bits.setSize(chromLen);
+  String chr=getChrom(infile);
 
   // Process optional GFF file
   haveGFF=cmd.option('g');
   if(haveGFF) {
-    String chr=getChrom(infile);
     loadGFF(cmd.optParm('g'),chr);
     //sortGFF();
   }
@@ -115,7 +117,15 @@ segment-vcf [options] <in.vcf> <binsize> <chrom-length> <out.bed>\n\
   while(reader.nextVariant(v,genotype)) mask(v.getPos(),v.getEnd());
 
   // Segment
-  
+  ofstream os(outfile.c_str());
+  int prevPos=0;
+  while(prevPos<chromLen) {
+    int nextPos=prevPos+binSize;
+    if(nextPos>=chromLen) nextPos=chromLen;
+    while(nextPos<chromLen && bits.isMember(nextPos)) ++nextPos;
+    emit(os,chr,prevPos,nextPos);
+    prevPos=nextPos;
+  }
 
   cout<<"[done]"<<endl;
   return 0;
