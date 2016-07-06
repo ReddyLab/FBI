@@ -19,6 +19,7 @@ while(1) {
   my $transcriptID=$fbi->getTranscriptID();
   next if $seen{$transcriptID};
   $seen{$transcriptID}=1;
+  my $substrate=$root->getAttribute("substrate");
   #my $status=$fbi->getStatusString();
   #if($status->hasDescendentOrDatum("bad-annotation")) { next }
   #next unless if($status eq "mapped");
@@ -26,6 +27,7 @@ while(1) {
   if($transcript) {
     my $id=$transcript->getTranscriptId();
     $transcript->setTranscriptId($id);
+    $transcript->setSubstrate($substrate);
     $id=$transcript->getGeneId();
     $transcript->setGeneId($id);
     print OUT $transcript->toGff();

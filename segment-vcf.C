@@ -9,23 +9,23 @@
 #include "BOOM/CommandLine.H"
 #include "BOOM/Pipe.H"
 #include "BOOM/Regex.H"
+#include "BOOM/VcfReader.H"
+#include "BOOM/GffReader.H"
+#include "BOOM/Vector.H"
+#include "BOOM/Interval.H"
 using namespace std;
 using namespace BOOM;
-
-struct Variant {
-  String chr;
-  int begin;
-  int end;
-  Variant(const String &c,int b,int e) : chr(c), begin(b), end(e) {}
-};
 
 class Application {
 public:
   Application();
   int main(int argc,char *argv[]);
 private:
-  Regex gzRegex;
-  Vector<Variant> variants;
+  bool haveGFF;
+  Vector<Interval> features;
+  String getChrom(const String &vcfFilename);
+  void loadGFF(const String &filename,const String &chr);
+  void sortGFF();
 };
 
 
@@ -56,33 +56,61 @@ Application::Application()
 int Application::main(int argc,char *argv[])
 {
   // Process command line
-  CommandLine cmd(argc,argv,"");
+  CommandLine cmd(argc,argv,"g:");
   if(cmd.numArgs()!=3)
-    throw String("segment-vcf <in.vcf> <binsize> <out.bed>");
+    throw String("\n\
+segment-vcf [options] <in.vcf> <binsize> <out.bed>\n\
+    -g file : also respect features given in GFF file\n\
+\n\
+    * VCF file must be for a single chromosome only\n\
+    * VCF file must be sorted by position\n\
+");
   const String &infile=cmd.arg(0);
   const int binSize=cmd.arg(1).asInt();
   const String &outfile=cmd.arg(2);
   const bool isZipped=gzRegex.search(infile);
 
-  // Load all variants from the vcf file
-  Vector<String> fields;
-  File &f=isZipped ? *new GunzipPipe(infile) : *new File(infile);
-  while(!f.eof()) {
-    String line=f.getline();
-    if(line.empty()) continue;
-    if(line[0]=='#') continue;
-    line.getFields(fields);
-    if(fields.size()<10) continue;
-    const String &chr=fields[0];
-    int pos=fields[1].asInt()-1;
-    const String &ref=fields[3];
-    int refLen=ref.length();
-    //cout<<chr<<"\t"<<pos<<"\t"<<pos+refLen<<endl;
-    variants.push_back(Variant(chr,pos,pos+refLen));
+  // Process optional GFF file
+  haveGFF=cmd.option('g');
+  if(haveGFF) {
+    String chr=getChrom(infile);
+    loadGFF(cmd.optParm('g'));
+    sortGFF();
   }
 
-  cout<<"finished successfully"<<endl;
-  delete &f;
+  // Process VCF file
+  VcfReader(infile);
+  Variant variant; Vector<Genotype> genotype;
+  while(nextVariant(variant,genotype)) {
+    
+  }
+
+  cout<<"[done]"<<endl;
   return 0;
 }
+
+
+
+String Application::getChrom(const String &vcfFilename)
+{
+  VcfReader reader(vcfFilename);
+  Variant variant; Vector<Genotype> G;
+  if(!reader.nextVariant(variant,G))
+    throw "Error loading first variant from VCF file";
+  return variant.getChr();
+}
+
+
+
+void Application::loadGFF(const String &filename,const String &chr)
+{
+  GffReader reader(filename);
+  GffFeature *f;
+  while(f=reader.nextFeature()) {
+    if(f->getSubstrate()!=chr) continue;
+    features.push_back(Interval(f->getBegin(),f->getEnd()));
+  }
+}
+
+
 
