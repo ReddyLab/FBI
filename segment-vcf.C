@@ -11,10 +11,17 @@
 #include "BOOM/Regex.H"
 #include "BOOM/VcfReader.H"
 #include "BOOM/GffReader.H"
-#include "BOOM/Vector.H"
+#include "BOOM/VectorSorter.H"
 #include "BOOM/Interval.H"
 using namespace std;
 using namespace BOOM;
+
+class GffComparator : public Comparator<Interval> {
+public:
+  bool equal(Interval &a,Interval &b) { return a.getBegin()==b.getBegin(); }
+  bool greater(Interval &a,Interval &b) { return a.getBegin()>b.getBegin(); }
+  bool less(Interval &a,Interval &b) { return a.getBegin()<b.getBegin(); }
+};
 
 class Application {
 public:
@@ -46,7 +53,6 @@ int main(int argc,char *argv[])
 
 
 Application::Application()
-  : gzRegex("\\.gz$")
 {
   // ctor
 }
@@ -68,20 +74,19 @@ segment-vcf [options] <in.vcf> <binsize> <out.bed>\n\
   const String &infile=cmd.arg(0);
   const int binSize=cmd.arg(1).asInt();
   const String &outfile=cmd.arg(2);
-  const bool isZipped=gzRegex.search(infile);
 
   // Process optional GFF file
   haveGFF=cmd.option('g');
   if(haveGFF) {
     String chr=getChrom(infile);
-    loadGFF(cmd.optParm('g'));
+    loadGFF(cmd.optParm('g'),chr);
     sortGFF();
   }
 
   // Process VCF file
-  VcfReader(infile);
+  VcfReader reader(infile);
   Variant variant; Vector<Genotype> genotype;
-  while(nextVariant(variant,genotype)) {
+  while(reader.nextVariant(variant,genotype)) {
     
   }
 
@@ -111,6 +116,16 @@ void Application::loadGFF(const String &filename,const String &chr)
     features.push_back(Interval(f->getBegin(),f->getEnd()));
   }
 }
+
+
+
+void Application::sortGFF()
+{
+  GffComparator cmp;
+  VectorSorter<Interval> sorter(features,cmp);
+  sorter.sortAscendInPlace();
+}
+
 
 
 
