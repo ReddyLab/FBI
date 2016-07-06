@@ -6,7 +6,8 @@
  ****************************************************************/
 #include <iostream>
 #include "OrfAnalyzer.H"
-#include "BOOM/PureDnaAlphabet.H"
+//#include "BOOM/PureDnaAlphabet.H"
+#include "BOOM/DnaAlphabet.H"
 #include "BOOM/CodonIterator.H"
 using namespace std;
 using namespace BOOM;
