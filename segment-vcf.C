@@ -32,11 +32,13 @@ public:
   int main(int argc,char *argv[]);
 private:
   bool haveGFF;
+  BitSet bits;
   //Vector<Interval> features;
   String getChrom(const String &vcfFilename);
   void loadGFF(const String &filename,const String &chr);
   //void sortGFF();
-  void emit(const String &chr,int prevBoundary,int nextBoundary);
+  void emit(ostream &,const String &chr,int prevBoundary,int nextBoundary);
+  void mask(int begin,int end);
 };
 
 
@@ -79,16 +81,18 @@ segment-vcf [options] <in.vcf> <binsize> <chrom-length> <out.bed>\n\
   const int binSize=cmd.arg(1).asInt();
   const int chromLen=cmd.arg(2).asInt();
   const String &outfile=cmd.arg(3);
+  bits.setSize(chromLen);
 
   // Process optional GFF file
   haveGFF=cmd.option('g');
   if(haveGFF) {
     String chr=getChrom(infile);
     loadGFF(cmd.optParm('g'),chr);
-    sortGFF();
+    //sortGFF();
   }
 
   // Process VCF file
+  /*
   ofstream os(outfile.c_str());
   VcfReader reader(infile);
   Variant prevVariant, nextVariant; Vector<Genotype> genotype;
@@ -105,6 +109,13 @@ segment-vcf [options] <in.vcf> <binsize> <chrom-length> <out.bed>\n\
   }
   if(nextBoundary>prevBoundary)
     emit(os,chr,prevBoundary,nextBoundary);
+  */
+  VcfReader reader(infile);
+  Variant v; Vector<Genotype> genotype;
+  while(reader.nextVariant(v,genotype)) mask(v.getPos(),v.getEnd());
+
+  // Segment
+  
 
   cout<<"[done]"<<endl;
   return 0;
@@ -129,25 +140,36 @@ void Application::loadGFF(const String &filename,const String &chr)
   GffFeature *f;
   while(f=reader.nextFeature()) {
     if(f->getSubstrate()!=chr) continue;
-    features.push_back(Interval(f->getBegin(),f->getEnd()));
+    //features.push_back(Interval(f->getBegin(),f->getEnd()));
+    mask(f->getBegin(),f->getEnd());
   }
 }
 
 
-
+/*
 void Application::sortGFF()
 {
   GffComparator cmp;
   VectorSorter<Interval> sorter(features,cmp);
   sorter.sortAscendInPlace();
 }
+*/
 
 
-
-void Application::emit(const String &chr,int prevBoundary,int nextBoundary)
+void Application::emit(ostream &os,const String &chr,int prevBoundary,
+		       int nextBoundary)
 {
   os<<chr<<"\t"<<prevBoundary<<"\t"<<nextBoundary<<endl;
 }
+
+
+
+void Application::mask(int begin,int end)
+{
+  for(int i=0 ; i<end ; ++i) bits.addMember(i);
+}
+
+
 
 
 
