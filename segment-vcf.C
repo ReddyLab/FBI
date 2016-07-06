@@ -75,8 +75,10 @@ segment-vcf [options] <in.vcf> <binsize> <chrom-length> <out.bed>\n\
     -g file : also respect features given in GFF file\n\
 \n\
     * VCF file must be for a single chromosome only\n\
-    * VCF file must be sorted by position\n\
+    * GFF file can contain multiple chromosomes\n\
 ");
+  //    * VCF file must be sorted by position\n\
+
   const String &infile=cmd.arg(0);
   const int binSize=cmd.arg(1).asInt();
   const int chromLen=cmd.arg(2).asInt();
@@ -89,6 +91,7 @@ segment-vcf [options] <in.vcf> <binsize> <chrom-length> <out.bed>\n\
   // Process optional GFF file
   haveGFF=cmd.option('g');
   if(haveGFF) {
+    cout<<"loading GFF"<<endl; system("date");
     loadGFF(cmd.optParm('g'),chr);
     //sortGFF();
   }
@@ -112,11 +115,13 @@ segment-vcf [options] <in.vcf> <binsize> <chrom-length> <out.bed>\n\
   if(nextBoundary>prevBoundary)
     emit(os,chr,prevBoundary,nextBoundary);
   */
+  cout<<"loading VCF"<<endl; system("date");
   VcfReader reader(infile);
   Variant v; Vector<Genotype> genotype;
   while(reader.nextVariant(v,genotype)) mask(v.getPos(),v.getEnd());
 
   // Segment
+  cout<<"segmenting"<<endl; system("date");
   ofstream os(outfile.c_str());
   int prevPos=0;
   while(prevPos<chromLen) {
@@ -127,6 +132,7 @@ segment-vcf [options] <in.vcf> <binsize> <chrom-length> <out.bed>\n\
     prevPos=nextPos;
   }
 
+  system("date");
   cout<<"[done]"<<endl;
   return 0;
 }
