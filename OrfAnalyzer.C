@@ -131,6 +131,8 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   const int refLocalStart=refTrans.mapToTranscriptCoords(refGenomicStart);
   bool change=refLocalStart<0; // -1 means unmapped due to being intronic
 
+  cout<<"change="<<change<<endl;
+
   // If this start codon existed but had a poor score in the reference,
   // it may indeed indicate a functional change
   SignalSensor *sensor=sensors.startCodonSensor;
@@ -149,13 +151,17 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
     }
   }
 
+  cout<<"now change="<<change<<endl;
+
   // Compute oldStartCodonScore 
   const int altLocal=altTrans.mapToTranscriptCoords(oldBegin);
   GffTranscript altCopy(altTrans);
   altCopy.loadSequence(altStr);
   String altRNA=altCopy.getFullSequence();
   oldStartCodonScore=sensor->getLogP(altSeq,altStr,altLocal-offset);
-  
+  cout<<"old score = "<<oldStartCodonScore<<endl;
+  cout<<"new score = "<<newStartCodonScore<<endl;
+
   // If the start codon existed previously but was in a different frame,
   // it's again worth reporting as possibly impacting function
   int refBegin, refEnd;
@@ -167,6 +173,7 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   int newFrame=(oldLocal-newLocal)%3;
   if(newFrame==0 && oldFrame!=0) change=true;
   //if(newFrame!=0 && oldFrame==0) change=true;
+  cout<<"change3="<<change<<endl;
 
   if(change) {
     altORF->computePhases();
