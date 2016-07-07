@@ -765,7 +765,9 @@ void FBI::processAltStructure(AlternativeStructure &s,
 				altSeqStr,altSeq,projectedLab,sensors);
       analyzeEarlierStart(newTranscript,checker,projectedLab,fate);
       changeToCoding->append(fate);
-      delete newTranscript;
+      delete s.transcript;
+      s.transcript=newTranscript;
+      //delete newTranscript;
     }
   }
   else { // noncoding: check whether it changes to coding
@@ -799,7 +801,7 @@ void FBI::processAltStructure(AlternativeStructure &s,
   listStructureChanges(s,node,s.msg,msg2);
   if(s.msg) { status->append(s.msg); s.msg=NULL; }
   altStructNode->append(node);
-  handleProteinFate(s,node);
+  if(!changeToCoding) handleProteinFate(s,node);
 }
 
 
