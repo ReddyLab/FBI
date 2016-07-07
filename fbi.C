@@ -148,6 +148,7 @@ private:
   int getTruncationLength(const GffTranscript &transcript,
 			  int PTC,
 			  int stop);
+  void appendSignal(const String &tag,const String &signal,float score);
 };
 
 
@@ -454,6 +455,17 @@ void FBI::initEssex(ostream &osFBI,
 
 
 
+Essex::Node *FBI::signalNode(const String &tag,const String &signal,
+			     float score)
+{
+  Essex::CompositeNode *node=new Essex::CompositeNode(tag);
+  node->append(signal);
+  node->append(score);
+  return node;
+}
+
+
+
 /****************************************************************
  FBI::handleCoding()
  ****************************************************************/
@@ -467,12 +479,15 @@ void FBI::handleCoding(GffTranscript *altTrans,
 				   *altTrans,altSeqStr,altSeq,
 				   *revAlignment,oldOrfLen,newOrfLen,
 				   oldStartScore,newStartScore,
+				   oldStartStr,newStartStr,
 				   reverseStrand,altSeqLen);
   if(upstreamStart) {
     Essex::CompositeNode *changeNode=
       new Essex::CompositeNode("new-upstream-start-codon");
+
     changeNode->append("new-start-codon-score",newStartScore);
     changeNode->append("old-start-codon-score",oldStartScore);
+    changeNode->append("new-start",newStartStr);
     Essex::CompositeNode *lengthNode=
       new Essex::CompositeNode("ORF-length");
     lengthNode->append(oldOrfLen);

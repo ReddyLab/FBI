@@ -45,6 +45,8 @@ public:
 					  int &altOrfLen,
 					  float &oldStartCodonScore,
 					  float &newStartCodonScore,
+					  String &oldStartStr,
+					  String &newStartStr,
 					  bool reverseStrand,
 					  int altSeqLen);
 private:

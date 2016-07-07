@@ -108,6 +108,8 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
 			       int &newOrfLen,
 			       float &oldStartCodonScore,
 			       float &newStartCodonScore,
+			       String &oldStartStr,
+			       String &newStartStr,
 			       bool reverseStrand,
 			       int altSeqLen)
 {
