@@ -148,7 +148,10 @@ private:
   int getTruncationLength(const GffTranscript &transcript,
 			  int PTC,
 			  int stop);
-  Essex::Node *signalNode(const String &tag,const String &signal,float score);
+  Essex::Node *signalNode(const String &tag,
+			  const String &signal,
+			  float score,
+			  float cutoff);
 };
 
 
@@ -456,11 +459,12 @@ void FBI::initEssex(ostream &osFBI,
 
 
 Essex::Node *FBI::signalNode(const String &tag,const String &signal,
-			     float score)
+			     float score,float cutoff)
 {
   Essex::CompositeNode *node=new Essex::CompositeNode(tag);
   node->append(signal);
   node->append(score);
+  node->append("cutoff:"); node->append(cutoff);
   return node;
 }
 
@@ -485,8 +489,11 @@ void FBI::handleCoding(GffTranscript *altTrans,
   if(upstreamStart) {
     Essex::CompositeNode *changeNode=
       new Essex::CompositeNode("new-upstream-start-codon");
-    changeNode->append(signalNode("new-start",newStartStr,newStartScore));
-    changeNode->append(signalNode("old-start",oldStartStr,oldStartScore));
+    const float cutoff=sensors.startCodonSensor->getCutoff();
+    changeNode->append(signalNode("new-start",newStartStr,newStartScore,
+				  cutoff));
+    changeNode->append(signalNode("old-start",oldStartStr,oldStartScore,
+				  cutoff));
     Essex::CompositeNode *lengthNode=new Essex::CompositeNode("ORF-length");
     lengthNode->append(oldOrfLen);
     lengthNode->append("=>");
@@ -676,8 +683,9 @@ void FBI::processAltStructure(AlternativeStructure &s,
     if(changeToCoding) {
       msg2=
 	new Essex::CompositeNode("new-upstream-start-codon");
-      msg2->append(signalNode("new-start",newStartStr,newStartScore));
-      msg2->append(signalNode("old-start",oldStartStr,oldStartScore));
+      const float cutoff=sensors.startCodonSensor->getCutoff();
+      msg2->append(signalNode("new-start",newStartStr,newStartScore,cutoff));
+      msg2->append(signalNode("old-start",oldStartStr,oldStartScore,cutoff));
       Essex::CompositeNode *lengthNode=
 	new Essex::CompositeNode("ORF-length");
       lengthNode->append(oldOrfLen);
