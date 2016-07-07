@@ -36,7 +36,7 @@ using namespace BOOM;
 /****************************************************************
  Globals
  ****************************************************************/
-bool VERBOSE=true;//false;
+bool VERBOSE=false;
 static const char *PROGRAM_NAME="find-variant-signals";
 static const char *VERSION="1.0";
 Alphabet alphabet;
