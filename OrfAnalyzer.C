@@ -112,11 +112,14 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
 			       String &oldStartStr,
 			       String &newStartStr,
 			       bool reverseStrand,
-			       int altSeqLen)
+			       int altSeqLen,
+			       Essex::CompositeNode *&msg)
 {
   /* Requirements: either the new start codon didn't exist in the reference,
      or it had a much weaker score, or it was in a different reading frame.
    */
+
+  msg=NULL;
 
   // See if there is an upstream start codon
   int altGenomicStart;
@@ -133,8 +136,9 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   // that this is a functional change
   const int refGenomicStart=altToRef.mapApproximate(altGenomicStart,DIR_RIGHT);
   const int refLocalStart=refTrans.mapToTranscriptCoords(refGenomicStart);
+  String reason;
   bool change=refLocalStart<0; // -1 means unmapped due to being intronic
-  if(refLocalStart<0) cout<<"case A"<<endl;
+  if(refLocalStart<0) reason="was-intronic";
 
   // If this start codon existed but had a poor score in the reference,
   // it may indeed indicate a functional change
@@ -145,19 +149,22 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
     refCopy.loadSequence(refStr);
     String refRNA=refCopy.getFullSequence();
     const int begin=refLocalStart-offset;
-    if(begin<0 || !sensor->consensusOccursAt(refRNA,refLocalStart)) {
+    if(!sensor->consensusOccursAt(refRNA,refLocalStart)) {
       change=true;
-      cout<<"case B begin="<<begin<<" cons occurs = "<<refRNA.substring(refLocalStart,3)<<endl;
+      reason="bad-consensus";
     }
-    else {
+    else if(begin>=0) {
       Sequence rnaSeq(refRNA,DnaAlphabet::global());
       float refScore=sensor->getLogP(rnaSeq,refRNA,begin);
       if(refScore<sensor->getCutoff()) {
 	change=true;
-	cout<<"case C"<<endl;
+	reason="score-below-threshold";
       }
     }
   }
+
+  // If no change, just return
+  if(!change) return NULL;
 
   // Compute oldStartCodonScore 
   const int altLocal=altTrans.mapToTranscriptCoords(oldBegin);
@@ -165,7 +172,6 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   altCopy.loadSequence(altStr);
   String altRNA=altCopy.getFullSequence();
   Sequence altRNAseq(altRNA,DnaAlphabet::global());
-  //oldStartCodonScore=sensor->getLogP(altSeq,altStr,altLocal-offset);
   oldStartCodonScore=sensor->getLogP(altRNAseq,altRNA,altLocal-offset);
   oldStartStr=SignalPrinter::print(*sensor,altLocal-offset,altRNA);
   const int newAltLocal=altTrans.mapToTranscriptCoords(altGenomicStart);
@@ -173,7 +179,7 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
 
   // If the start codon existed previously but was in a different frame,
   // it's again worth reporting as possibly impacting function
-  int refBegin, refEnd;
+  /*int refBegin, refEnd;
   refTrans.getCDSbeginEnd(refBegin,refEnd);
   const int localRefBegin=refTrans.mapToTranscriptCoords(refBegin);
   int oldFrame=(localRefBegin-refLocalStart)%3;
@@ -185,14 +191,13 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
     cout<<"case D"<<endl;
   }
   //if(newFrame!=0 && oldFrame==0) change=true;
+  */
 
-  if(change) {
-    altORF->computePhases();
-    altORF->loadSequence(altStr);
-    return altORF;
-  }
-
-  return NULL;
+  msg=new Essex::CompositeNode("reference");
+  msg->append(reason);
+  altORF->computePhases();
+  altORF->loadSequence(altStr);
+  return altORF;
 }
 
 

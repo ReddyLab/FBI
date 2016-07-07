@@ -549,13 +549,14 @@ void FBI::handleCoding(GffTranscript *altTrans,
 {
   int oldOrfLen, newOrfLen; float oldStartScore, newStartScore;
   String oldStartStr, newStartStr;
+  Essex::CompositeNode *reason=NULL;
   GffTranscript *newTranscript=
     orfAnalyzer->earlierStartCodon(*refTrans,refSeqStr,refSeq,
 				   *altTrans,altSeqStr,altSeq,
 				   *revAlignment,oldOrfLen,newOrfLen,
 				   oldStartScore,newStartScore,
 				   oldStartStr,newStartStr,
-				   reverseStrand,altSeqLen);
+				   reverseStrand,altSeqLen,reason);
   if(newTranscript) {
     Essex::CompositeNode *upstreamStart;
     if(reverseStrand) {
@@ -570,6 +571,7 @@ void FBI::handleCoding(GffTranscript *altTrans,
 				  cutoff));
     changeNode->append(signalNode("old-start",oldStartStr,oldStartScore,
 				  cutoff));
+    changeNode->append(reason);
     Essex::CompositeNode *lengthNode=new Essex::CompositeNode("ORF-length");
     lengthNode->append(oldOrfLen);
     lengthNode->append("=>");
@@ -744,14 +746,14 @@ void FBI::processAltStructure(AlternativeStructure &s,
   Essex::CompositeNode *msg2=NULL, *changeToCoding=NULL;
   if(refTrans->isCoding()) { // see if a new start coding extends the ORF
     int oldOrfLen, newOrfLen; float oldStartScore, newStartScore;
-    String oldStartStr, newStartStr;
+    String oldStartStr, newStartStr; Essex::CompositeNode *reason;
     GffTranscript *newTranscript=
       orfAnalyzer->earlierStartCodon(*refTrans,refSeqStr,refSeq,
 				     *s.transcript,altSeqStr,altSeq,
 				     *revAlignment,oldOrfLen,newOrfLen,
 				     oldStartScore,newStartScore,
 				     oldStartStr, newStartStr,
-				     reverseStrand,altSeqLen);
+				     reverseStrand,altSeqLen,reason);
     if(newTranscript) {
       changeToCoding=newTranscript->toEssex();
       msg2=
@@ -759,6 +761,7 @@ void FBI::processAltStructure(AlternativeStructure &s,
       const float cutoff=sensors.startCodonSensor->getCutoff();
       msg2->append(signalNode("new-start",newStartStr,newStartScore,cutoff));
       msg2->append(signalNode("old-start",oldStartStr,oldStartScore,cutoff));
+      msg2->append(reason);
       Essex::CompositeNode *lengthNode=
 	new Essex::CompositeNode("ORF-length");
       lengthNode->append(oldOrfLen);

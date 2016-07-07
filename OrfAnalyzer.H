@@ -48,7 +48,8 @@ public:
 				   String &oldStartStr,
 				   String &newStartStr,
 				   bool reverseStrand,
-				   int altSeqLen);
+				   int altSeqLen,
+				   Essex::CompositeNode *&msg);
 private:
   SignalSensors &sensors;
   const int MIN_ORF_LEN;
