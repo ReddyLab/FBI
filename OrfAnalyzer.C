@@ -134,6 +134,7 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   const int refGenomicStart=altToRef.mapApproximate(altGenomicStart,DIR_RIGHT);
   const int refLocalStart=refTrans.mapToTranscriptCoords(refGenomicStart);
   bool change=refLocalStart<0; // -1 means unmapped due to being intronic
+  if(refLocalStart<0) cout<<"case A"<<endl;
 
   // If this start codon existed but had a poor score in the reference,
   // it may indeed indicate a functional change
@@ -144,11 +145,17 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
     refCopy.loadSequence(refStr);
     String refRNA=refCopy.getFullSequence();
     const int begin=refLocalStart-offset;
-    if(begin<0 || !sensor->consensusOccursAt(refStr,refLocalStart))
+    if(begin<0 || !sensor->consensusOccursAt(refRNA,refLocalStart)) {
       change=true;
+      cout<<"case B begin="<<begin<<" cons occurs = "<<refRNA.substring(refLocalStart,3)<<endl;
+    }
     else {
-      float refScore=sensor->getLogP(refSeq,refStr,begin);
-      if(refScore<sensor->getCutoff()) change=true;
+      Sequence rnaSeq(refRNA,DnaAlphabet::global());
+      float refScore=sensor->getLogP(rnaSeq,refRNA,begin);
+      if(refScore<sensor->getCutoff()) {
+	change=true;
+	cout<<"case C"<<endl;
+      }
     }
   }
 
@@ -173,17 +180,19 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   const int oldLocal=altTrans.mapToTranscriptCoords(oldBegin);
   const int newLocal=altTrans.mapToTranscriptCoords(altGenomicStart);
   int newFrame=(oldLocal-newLocal)%3;
-  if(newFrame==0 && oldFrame!=0) change=true;
+  if(newFrame==0 && oldFrame!=0) {
+    change=true;
+    cout<<"case D"<<endl;
+  }
   //if(newFrame!=0 && oldFrame==0) change=true;
 
   if(change) {
     altORF->computePhases();
     altORF->loadSequence(altStr);
-    if(reverseStrand) altORF->reverseComplement(altSeqLen);
+    return altORF;
   }
 
-  // Report results
-  return altORF;
+  return NULL;
 }
 
 

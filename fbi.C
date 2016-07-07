@@ -36,7 +36,7 @@ using namespace BOOM;
 /****************************************************************
  Globals
  ****************************************************************/
-bool VERBOSE=false;
+bool VERBOSE=true;//false;
 static const char *PROGRAM_NAME="find-variant-signals";
 static const char *VERSION="1.0";
 Alphabet alphabet;
@@ -478,7 +478,7 @@ Essex::Node *FBI::signalNode(const String &tag,const String &signal,
 
 
 /****************************************************************
- FBI::handleCoding()
+ FBI::analyzeEarlierStart()
  ****************************************************************/
 void FBI::analyzeEarlierStart(GffTranscript *altTrans,
 			      ProjectionChecker &checker,
@@ -488,7 +488,7 @@ void FBI::analyzeEarlierStart(GffTranscript *altTrans,
   // Translate
   String refProtein, altProtein;
   checker.translate(*refTrans,*altTrans,refProtein,altProtein);
-  
+
   int ejcDistance;
   NMD_TYPE nmdType=nmd.predict(*altTrans,altSeqStr,ejcDistance);
   switch(nmdType) {
@@ -557,7 +557,12 @@ void FBI::handleCoding(GffTranscript *altTrans,
 				   oldStartStr,newStartStr,
 				   reverseStrand,altSeqLen);
   if(newTranscript) {
-    Essex::CompositeNode *upstreamStart=newTranscript->toEssex();
+    Essex::CompositeNode *upstreamStart;
+    if(reverseStrand) {
+      GffTranscript temp(*newTranscript);
+      temp.reverseComplement(altSeqLen);
+      upstreamStart=temp.toEssex();
+    } else upstreamStart=newTranscript->toEssex();
     Essex::CompositeNode *changeNode=
       new Essex::CompositeNode("new-upstream-start-codon");
     const float cutoff=sensors.startCodonSensor->getCutoff();

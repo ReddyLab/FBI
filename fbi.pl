@@ -7,10 +7,10 @@ use GffTranscriptReader;
 use TempFilename;
 
 my $slurm=$ENV{"SLURM_JOB_ID"};
-print "SLURM $slurm\n";
+if($slurm) { print "SLURM $slurm\n" }
 
 my $name=ProgramName::get();
-die "$name <model-file-or-dir> <ref.multi-fasta> <alt.multi-fasta> <ref.multi-gff> <out.fbi>\n" unless @ARGV==5;
+die "$name <model-file-or-dir> <ref.multi-fasta> <alt.multi-fasta> <ref.multi-gff> <out.essex>\n" unless @ARGV==5;
 my ($modelDir,$refFasta,$altFasta,$refGFF,$outFBI)=@ARGV;
 my $commandline = join " ", $0, @ARGV;
 print "$commandline\n";
