@@ -162,7 +162,7 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   oldStartCodonScore=sensor->getLogP(altRNAseq,altRNA,altLocal-offset);
   oldStartStr=SignalPrinter::print(*sensor,altLocal-offset,altRNA);
   const int newAltLocal=altTrans.mapToTranscriptCoords(altGenomicStart);
-  newStartStr=SignalPrinter::print(*sensor,newAltLocal,altRNA);
+  newStartStr=SignalPrinter::print(*sensor,newAltLocal-offset,altRNA);
 
   // If the start codon existed previously but was in a different frame,
   // it's again worth reporting as possibly impacting function
