@@ -43,11 +43,7 @@ GffTranscript *OrfAnalyzer::findORF(const GffTranscript &original,
 int OrfAnalyzer::findStartCodon(const String &transcript,
 				float &startCodonScore)
 {
-  // ### DEBUGGING
   SignalSensor *sensor=sensors.startCodonSensor;
-  //SignalSensor *sensor=sensors.shortStartSensor;
-  // ###
-
   const int footprint=sensor->getContextWindowLength();
   const int offset=sensor->getConsensusOffset();
   const int L=transcript.length();

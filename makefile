@@ -3174,3 +3174,11 @@ segment-vcf: \
 		$(LIBS)
 #--------------------------------------------------------
 
+
+#--------------------------------------------------------
+$(OBJ)/SignalPrinter.o:\
+		SignalPrinter.C\
+		SignalPrinter.H
+	$(CC) $(CFLAGS) -o $(OBJ)/SignalPrinter.o -c \
+		SignalPrinter.C
+#---------------------------------------------------------
