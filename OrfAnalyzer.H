@@ -34,21 +34,21 @@ public:
 					  int &altOrfLen,
 					  bool reverseStrand,
 					  int altSeqLen);
-  Essex::CompositeNode *earlierStartCodon(const GffTranscript &refTrans,
-					  const String &refStr,
-					  const Sequence &refSeq,
-					  const GffTranscript &altTrans,
-					  const String &altStr,
-					  const Sequence &altSeq,
-					  const CigarAlignment &altToRef,
-					  int &refOrfLen,
-					  int &altOrfLen,
-					  float &oldStartCodonScore,
-					  float &newStartCodonScore,
-					  String &oldStartStr,
-					  String &newStartStr,
-					  bool reverseStrand,
-					  int altSeqLen);
+  GffTranscript *earlierStartCodon(const GffTranscript &refTrans,
+				   const String &refStr,
+				   const Sequence &refSeq,
+				   const GffTranscript &altTrans,
+				   const String &altStr,
+				   const Sequence &altSeq,
+				   const CigarAlignment &altToRef,
+				   int &refOrfLen,
+				   int &altOrfLen,
+				   float &oldStartCodonScore,
+				   float &newStartCodonScore,
+				   String &oldStartStr,
+				   String &newStartStr,
+				   bool reverseStrand,
+				   int altSeqLen);
 private:
   SignalSensors &sensors;
   const int MIN_ORF_LEN;

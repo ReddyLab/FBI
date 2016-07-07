@@ -479,14 +479,15 @@ void FBI::handleCoding(GffTranscript *altTrans,
 {
   int oldOrfLen, newOrfLen; float oldStartScore, newStartScore;
   String oldStartStr, newStartStr;
-  Essex::CompositeNode *upstreamStart=
+  GffTranscript *newTranscript=
     orfAnalyzer->earlierStartCodon(*refTrans,refSeqStr,refSeq,
 				   *altTrans,altSeqStr,altSeq,
 				   *revAlignment,oldOrfLen,newOrfLen,
 				   oldStartScore,newStartScore,
 				   oldStartStr,newStartStr,
 				   reverseStrand,altSeqLen);
-  if(upstreamStart) {
+  if(newTranscript) {
+    Essex::CompositeNode *upstreamStart=newTranscript->toEssex();
     Essex::CompositeNode *changeNode=
       new Essex::CompositeNode("new-upstream-start-codon");
     const float cutoff=sensors.startCodonSensor->getCutoff();
@@ -501,6 +502,7 @@ void FBI::handleCoding(GffTranscript *altTrans,
     changeNode->append(lengthNode);
     changeNode->append(upstreamStart);
     status->append(changeNode);
+    delete newTranscript;
   }
 
   // Translate
@@ -665,14 +667,15 @@ void FBI::processAltStructure(AlternativeStructure &s,
   if(refTrans->isCoding()) { // see if a new start coding extends the ORF
     int oldOrfLen, newOrfLen; float oldStartScore, newStartScore;
     String oldStartStr, newStartStr;
-    changeToCoding=
+    GffTranscript *newTranscript=
       orfAnalyzer->earlierStartCodon(*refTrans,refSeqStr,refSeq,
 				     *s.transcript,altSeqStr,altSeq,
 				     *revAlignment,oldOrfLen,newOrfLen,
 				     oldStartScore,newStartScore,
 				     oldStartStr, newStartStr,
 				     reverseStrand,altSeqLen);
-    if(changeToCoding) {
+    if(newTranscript) {
+      changeToCoding=newTranscript->toEssex();
       msg2=
 	new Essex::CompositeNode("new-upstream-start-codon");
       const float cutoff=sensors.startCodonSensor->getCutoff();
@@ -684,6 +687,7 @@ void FBI::processAltStructure(AlternativeStructure &s,
       lengthNode->append("=>");
       lengthNode->append(newOrfLen);
       msg2->append(lengthNode);
+      delete newTranscript;
     }
   }
   else { // noncoding: check whether it changes to coding

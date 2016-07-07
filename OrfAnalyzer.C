@@ -97,7 +97,7 @@ Essex::CompositeNode *OrfAnalyzer::noncodingToCoding(
 
 
 
-Essex::CompositeNode *
+GffTranscript *
 OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
 			       const String &refStr,
 			       const Sequence &refSeq,
@@ -183,9 +183,7 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   }
 
   // Report results
-  Essex::CompositeNode *altEssex=change ? altORF->toEssex() : NULL;
-  delete altORF;
-  return altEssex;
+  return altORF;
 }
 
 
