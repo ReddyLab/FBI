@@ -518,15 +518,7 @@ void FBI::handleCoding(GffTranscript *altTrans,
     stopNode->append("EJC-distance",ejcDistance);
     status->append(stopNode);
   } break;
-    /*case NMD_TRUNCATION:  { // ### this is disabled for now
-    int matches, len;
-    alignProteins(refProtein,altProtein,matches);
-    Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
-    fate->append("protein-truncation");
-    percentMatch(matches,refProtein.length(),altProtein.length(),fate);
-    status->append(fate);
-  }
-  break;*/
+  //case NMD_TRUNCATION:  { // ### this is handled below
   case NMD_NO_STOP: 
     if(refTrans->hasUTR3()) status->append("nonstop-decay");
     break;

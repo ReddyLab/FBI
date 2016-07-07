@@ -182,7 +182,8 @@ void Application::emit(ostream &os,const String &chr,int prevBoundary,
 
 void Application::mask(int begin,int end)
 {
-  for(int i=0 ; i<end ; ++i) bits.addMember(i);
+  if(begin>end) INTERNAL_ERROR;
+  for(int i=begin ; i<end ; ++i) bits.addMember(i);
 }
 
 
