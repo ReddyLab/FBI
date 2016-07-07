@@ -128,7 +128,6 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   altTrans.getCDSbeginEnd(oldBegin,oldEnd);
   if(altGenomicStart>=oldBegin) { delete altORF; return NULL; }
   SignalSensor *sensor=sensors.startCodonSensor;
-  newStartStr=SignalPrinter::print(*sensor,altGenomicStart,altStr);
 
   // If that upstream start codon was previously intronic, it's a good bet
   // that this is a functional change
@@ -162,6 +161,8 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   //oldStartCodonScore=sensor->getLogP(altSeq,altStr,altLocal-offset);
   oldStartCodonScore=sensor->getLogP(altRNAseq,altRNA,altLocal-offset);
   oldStartStr=SignalPrinter::print(*sensor,altLocal-offset,altRNA);
+  const int newAltLocal=altTrans.mapToTranscriptCoords(altGenomicStart);
+  newStartStr=SignalPrinter::print(*sensor,newAltLocal,altRNA);
 
   // If the start codon existed previously but was in a different frame,
   // it's again worth reporting as possibly impacting function
