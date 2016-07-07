@@ -7,13 +7,14 @@
 #ifndef INCL_SignalPrinter_H
 #define INCL_SignalPrinter_H
 #include <iostream>
+#include "SignalSensor.H"
 using namespace std;
 using namespace BOOM;
 
 
 class SignalPrinter {
 public:
-  String print(SignalSensor &sensor,int windowPos,const String &genome)
+  static String print(SignalSensor &sensor,int windowPos,const String &genome);
 };
 
 

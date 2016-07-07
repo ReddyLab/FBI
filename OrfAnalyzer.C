@@ -8,6 +8,7 @@
 #include "OrfAnalyzer.H"
 #include "BOOM/DnaAlphabet.H"
 #include "BOOM/CodonIterator.H"
+#include "SignalPrinter.H"
 using namespace std;
 using namespace BOOM;
 
@@ -126,6 +127,8 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   int oldBegin, oldEnd;
   altTrans.getCDSbeginEnd(oldBegin,oldEnd);
   if(altGenomicStart>=oldBegin) { delete altORF; return NULL; }
+  SignalSensor *sensor=sensors.startCodonSensor;
+  newStartStr=SignalPrinter::print(*sensor,altGenomicStart,altStr);
 
   // If that upstream start codon was previously intronic, it's a good bet
   // that this is a functional change
@@ -135,7 +138,6 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
 
   // If this start codon existed but had a poor score in the reference,
   // it may indeed indicate a functional change
-  SignalSensor *sensor=sensors.startCodonSensor;
   const int offset=sensor->getConsensusOffset();
   const int windowLen=sensor->getContextWindowLength();
   if(refLocalStart>=0) { // it was exonic in the ref annotation
@@ -156,7 +158,10 @@ OrfAnalyzer::earlierStartCodon(const GffTranscript &refTrans,
   GffTranscript altCopy(altTrans);
   altCopy.loadSequence(altStr);
   String altRNA=altCopy.getFullSequence();
-  oldStartCodonScore=sensor->getLogP(altSeq,altStr,altLocal-offset);
+  Sequence altRNAseq(altRNA,DnaAlphabet::global());
+  //oldStartCodonScore=sensor->getLogP(altSeq,altStr,altLocal-offset);
+  oldStartCodonScore=sensor->getLogP(altRNAseq,altRNA,altLocal-offset);
+  oldStartStr=SignalPrinter::print(*sensor,altLocal-offset,altRNA);
 
   // If the start codon existed previously but was in a different frame,
   // it's again worth reporting as possibly impacting function

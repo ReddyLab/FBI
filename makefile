@@ -2443,6 +2443,7 @@ $(OBJ)/fbi.o:\
 		fbi.C
 #---------------------------------------------------------
 fbi: \
+		$(OBJ)/SignalPrinter.o \
 		$(OBJ)/OrfAnalyzer.o \
 		$(OBJ)/VariantClassifier.o \
 		$(OBJ)/StartCodonFinder.o \
@@ -2503,6 +2504,7 @@ fbi: \
 		$(OBJ)/ProjectionChecker.o \
 		$(OBJ)/fbi.o
 	$(CC) $(LDFLAGS) -o fbi \
+		$(OBJ)/SignalPrinter.o \
 		$(OBJ)/OrfAnalyzer.o \
 		$(OBJ)/VariantClassifier.o \
 		$(OBJ)/StartCodonFinder.o \
@@ -3172,9 +3174,6 @@ segment-vcf: \
 	$(CC) $(LDFLAGS) -o segment-vcf \
 		$(OBJ)/segment-vcf.o \
 		$(LIBS)
-#--------------------------------------------------------
-
-
 #--------------------------------------------------------
 $(OBJ)/SignalPrinter.o:\
 		SignalPrinter.C\
