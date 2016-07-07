@@ -131,9 +131,11 @@ private:
   void enumerateAlts(Essex::CompositeNode *altTransEssex,
 		     TranscriptSignals *signals,
 		     GffTranscript *altTrans,
-		     ostream &osFBI);
+		     ostream &osFBI,
+		     const Labeling &projectedLab);
   void processAltStructure(AlternativeStructure &,
-			   Essex::CompositeNode *altStructNode);
+			   Essex::CompositeNode *altStructNode,
+			   const Labeling &projectedLab);
   void listStructureChanges(const AlternativeStructure &,
 			    Essex::CompositeNode *,
 			    Essex::CompositeNode *&msg,
@@ -152,6 +154,10 @@ private:
 			  const String &signal,
 			  float score,
 			  float cutoff);
+  void analyzeEarlierStart(GffTranscript *altTrans,
+			   ProjectionChecker &,
+			   const Labeling &projectedLab,
+			   Essex::CompositeNode *status);
 };
 
 
@@ -394,7 +400,8 @@ void FBI::checkProjection(const String &outGff,
 
   // Enumerate alternative structures
   if(signals->anyBroken())
-    { enumerateAlts(altTransEssex,signals,altTrans,osFBI); return; }
+    { enumerateAlts(altTransEssex,signals,altTrans,osFBI,projectedLab);
+      return; }
   if(signals->anyWeakened()) appendBrokenSignals(signals);
 
   // Otherwise, projection was successful
@@ -473,6 +480,69 @@ Essex::Node *FBI::signalNode(const String &tag,const String &signal,
 /****************************************************************
  FBI::handleCoding()
  ****************************************************************/
+void FBI::analyzeEarlierStart(GffTranscript *altTrans,
+			      ProjectionChecker &checker,
+			      const Labeling &projectedLab,
+			      Essex::CompositeNode *status)
+{
+  // Translate
+  String refProtein, altProtein;
+  checker.translate(*refTrans,*altTrans,refProtein,altProtein);
+  
+  int ejcDistance;
+  NMD_TYPE nmdType=nmd.predict(*altTrans,altSeqStr,ejcDistance);
+  switch(nmdType) {
+  case NMD_NONE: break;
+  case NMD_NMD: {
+    Essex::CompositeNode *stopNode=
+      new Essex::CompositeNode("premature-stop");
+    stopNode->append("NMD");
+    stopNode->append("EJC-distance",ejcDistance);
+    status->append(stopNode);
+  } break;
+  //case NMD_TRUNCATION:  { // ### this is handled below
+  case NMD_NO_STOP: 
+    if(refTrans->hasUTR3()) status->append("nonstop-decay");
+    break;
+  case NMD_NO_START: INTERNAL_ERROR;
+  }
+
+  // Check for frameshifts and amino acid differences
+  const bool proteinsDiffer=refProtein!=altProtein;
+  if(proteinsDiffer) {
+    int matches;
+    alignProteins(refProtein,altProtein,matches);
+    Essex::CompositeNode *fate=new Essex::CompositeNode("protein-differs");
+    percentMatch(matches,refProtein.length(),altProtein.length(),fate);
+    status->append(fate);
+    Labeling altLab(altSeqLen);
+    computeLabeling(*altTrans,altLab);
+    checker.checkFrameshifts(projectedLab,altLab,status);
+  }
+
+  // Check for premature stop codon
+  if(nmdType==NMD_NONE && proteinsDiffer && refProtein.findFirst('*')>0 &&
+     altProtein.findFirst('*')>0) {
+    int refStop=refTrans->stopCodonGlobalCoord();
+    int altStop=altTrans->stopCodonGlobalCoord();
+    int altStopOnRef=(*revAlignment).mapApproximate(altStop,DIR_LEFT);
+    if(altStopOnRef>=0 && refStop>=0 && altStopOnRef<refStop) {
+      Essex::CompositeNode *fate=new Essex::CompositeNode("premature-stop");
+      Essex::CompositeNode *truncation=
+	new Essex::CompositeNode("protein-truncation");
+      const int diff=getTruncationLength(*refTrans,altStopOnRef,refStop);
+      truncation->append(String("")+diff+"aa");
+      fate->append(truncation);
+      status->append(fate);
+    }
+  }
+}
+
+
+
+/****************************************************************
+ FBI::handleCoding()
+ ****************************************************************/
 void FBI::handleCoding(GffTranscript *altTrans,
 		       ProjectionChecker &checker,
 		       const Labeling &projectedLab)
@@ -502,6 +572,7 @@ void FBI::handleCoding(GffTranscript *altTrans,
     changeNode->append(lengthNode);
     changeNode->append(upstreamStart);
     status->append(changeNode);
+    analyzeEarlierStart(newTranscript,checker,projectedLab,changeNode);
     delete newTranscript;
   }
 
@@ -620,9 +691,10 @@ void FBI::handleNoncoding(const GffTranscript *altTrans)
  FBI::enumerateAlts()
  ****************************************************************/
 void FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
-		       TranscriptSignals *signals,
-		       GffTranscript *altTrans,
-		       ostream &osFBI)
+			TranscriptSignals *signals,
+			GffTranscript *altTrans,
+			ostream &osFBI,
+			const Labeling &projectedLab)
 {
   altTransEssex->deleteChild("translation");
   appendBrokenSignals(signals);
@@ -643,7 +715,7 @@ void FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
 	  altStructures.begin(), end=altStructures.end() ; cur!=end ; 
 	++cur) {
       AlternativeStructure &s=**cur;
-      processAltStructure(s,altStructNode);
+      processAltStructure(s,altStructNode,projectedLab);
     }
   }
   else status->prepend("no-transcript");
@@ -661,7 +733,8 @@ void FBI::enumerateAlts(Essex::CompositeNode *altTransEssex,
  FBI::processAltStructure()
  ****************************************************************/
 void FBI::processAltStructure(AlternativeStructure &s,
-			      Essex::CompositeNode *altStructNode)
+			      Essex::CompositeNode *altStructNode,
+			      const Labeling &projectedLab)
 {
   Essex::CompositeNode *msg2=NULL, *changeToCoding=NULL;
   if(refTrans->isCoding()) { // see if a new start coding extends the ORF
@@ -687,6 +760,11 @@ void FBI::processAltStructure(AlternativeStructure &s,
       lengthNode->append("=>");
       lengthNode->append(newOrfLen);
       msg2->append(lengthNode);
+      Essex::CompositeNode *fate=new Essex::CompositeNode("fate");
+      ProjectionChecker checker(*refTrans,*newTranscript,refSeqStr,refSeq,
+				altSeqStr,altSeq,projectedLab,sensors);
+      analyzeEarlierStart(newTranscript,checker,projectedLab,fate);
+      changeToCoding->append(fate);
       delete newTranscript;
     }
   }
