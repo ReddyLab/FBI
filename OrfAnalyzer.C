@@ -8,6 +8,7 @@
 #include "OrfAnalyzer.H"
 #include "BOOM/DnaAlphabet.H"
 #include "BOOM/CodonIterator.H"
+#include "BOOM/Constants.H"
 #include "SignalPrinter.H"
 using namespace std;
 using namespace BOOM;
@@ -36,6 +37,7 @@ GffTranscript *OrfAnalyzer::findORF(const GffTranscript &original,
   transcript->forgetCDS();
   transcript->splitUTRandCDS(genomeStr,genomicStartPos,sensors.stopCodons);
   orfLength=transcript->getCDSlength();
+  transcript->toGff(cout);
   return transcript;
 }
 
@@ -84,6 +86,7 @@ Essex::CompositeNode *OrfAnalyzer::noncodingToCoding(
   GffTranscript *altORF=findORF(altTrans,altStr,altSeq,altStartScore,
 				altGenomicStart,altOrfLen);
   bool change=false;
+  cout<<refOrfLen<<" => "<<altOrfLen<<endl;
   if(!refORF && altORF && altOrfLen>=MIN_ORF_LEN) change=true;
   else if(refORF && altORF && refORF<MIN_ORF_LEN && altOrfLen>=MIN_ORF_LEN &&
 	  altOrfLen>=2*refOrfLen)

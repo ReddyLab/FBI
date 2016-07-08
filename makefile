@@ -3181,3 +3181,16 @@ $(OBJ)/SignalPrinter.o:\
 	$(CC) $(CFLAGS) -o $(OBJ)/SignalPrinter.o -c \
 		SignalPrinter.C
 #---------------------------------------------------------
+
+#--------------------------------------------------------
+$(OBJ)/subset-vcf-by-sample.o:\
+		subset-vcf-by-sample.C
+	$(CC) $(CFLAGS) -o $(OBJ)/subset-vcf-by-sample.o -c \
+		subset-vcf-by-sample.C
+#---------------------------------------------------------
+subset-vcf-by-sample: \
+		$(OBJ)/subset-vcf-by-sample.o
+	$(CC) $(LDFLAGS) -o subset-vcf-by-sample \
+		$(OBJ)/subset-vcf-by-sample.o \
+		$(LIBS)
+#---------------------------------------------
