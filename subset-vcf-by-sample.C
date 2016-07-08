@@ -21,6 +21,7 @@ private:
   Regex gzRegex;
   int findIndex(const String &id,const Vector<String> &IDs);
   void emitHeaderLines(const Vector<String> &lines,File &);
+  void emitChromLine(const String &id,File &);
 };
 
 
@@ -70,14 +71,24 @@ int Application::main(int argc,char *argv[])
   const Vector<String> &headerLines=reader.getHeaderLines();
   emitHeaderLines(headerLines,file);
   const String &chromLine=reader.getChromLine();
+  emitChromLine(wantID,file);
   Variant variant; Vector<Genotype> genotypes;
   while(reader.nextVariant(variant,genotypes)) {
-    break;
+    file.print(variant.getText()+"\t");
+    file.print(genotypes[wantIndex].getText()+"\n");
   }
   reader.close();
   delete &file;
 
   return 0;
+}
+
+
+
+void Application::emitChromLine(const String &id,File &file)
+{
+  file.print("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t");
+  file.print(id+"\n");
 }
 
 
