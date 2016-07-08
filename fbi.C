@@ -673,11 +673,12 @@ int FBI::getTruncationLength(const GffTranscript &transcript,int PTC,int stop)
 void FBI::handleNoncoding(const GffTranscript *altTrans)
 {
   if(!quiet) status->append("noncoding");
-  int refOrfLen, altOrfLen;
+  int refOrfLen, altOrfLen; float refStartScore, altStartScore;
   Essex::CompositeNode *codingTranscript=
     orfAnalyzer->noncodingToCoding(*refTrans,refSeqStr,refSeq,*altTrans,
 				   altSeqStr,altSeq,refOrfLen,altOrfLen,
-				   reverseStrand,altSeqLen);
+				   reverseStrand,altSeqLen,refStartScore,
+				   altStartScore);
   if(codingTranscript) {
     Essex::CompositeNode *changeNode=
       new Essex::CompositeNode("noncoding-to-coding");
@@ -687,6 +688,8 @@ void FBI::handleNoncoding(const GffTranscript *altTrans)
     lengthNode->append("=>");
     lengthNode->append(altOrfLen);
     changeNode->append(lengthNode);
+    changeNode->append("ref-start-score",refStartScore);
+    changeNode->append("alt-start-score",altStartScore);
     changeNode->append(codingTranscript);
     status->append(changeNode);
   }
@@ -780,10 +783,12 @@ void FBI::processAltStructure(AlternativeStructure &s,
   }
   else { // noncoding: check whether it changes to coding
     int refOrfLen, altOrfLen;
+    float refStartScore, altStartScore;
     changeToCoding=
       orfAnalyzer->noncodingToCoding(*refTrans,refSeqStr,refSeq,*s.transcript,
 				     altSeqStr,altSeq,refOrfLen,altOrfLen,
-				     reverseStrand,altSeqLen);
+				     reverseStrand,altSeqLen,refStartScore,
+				     altStartScore);
     if(changeToCoding) {
       msg2=new Essex::CompositeNode("noncoding-to-coding");
       Essex::CompositeNode *lengthNode=
@@ -792,6 +797,8 @@ void FBI::processAltStructure(AlternativeStructure &s,
       lengthNode->append("=>");
       lengthNode->append(altOrfLen);
       msg2->append(lengthNode);
+      msg2->append("ref-start-score",refStartScore);
+      msg2->append("alt-start-score",altStartScore);
     }
   }
   Essex::CompositeNode *node=NULL;

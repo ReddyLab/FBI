@@ -71,13 +71,16 @@ Essex::CompositeNode *OrfAnalyzer::noncodingToCoding(
 				    int &refOrfLen,
 				    int &altOrfLen,
 				    bool reverseStrand,
-				    int altSeqLen)
+				    int altSeqLen,
+				    float &refStartScore,
+				    float &altStartScore)
 {
-  float refStartScore; int refGenomicStart;
+  refStartScore=float(NEGATIVE_INFINITY);
+  altStartScore=float(NEGATIVE_INFINITY);
   refOrfLen=altOrfLen=0;
+  int refGenomicStart, altGenomicStart;
   GffTranscript *refORF=findORF(refTrans,refStr,refSeq,refStartScore,
 				refGenomicStart,refOrfLen);
-  float altStartScore; int altGenomicStart;
   GffTranscript *altORF=findORF(altTrans,altStr,altSeq,altStartScore,
 				altGenomicStart,altOrfLen);
   bool change=false;
