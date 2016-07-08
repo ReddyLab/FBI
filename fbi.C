@@ -691,6 +691,8 @@ void FBI::handleNoncoding(const GffTranscript *altTrans)
     changeNode->append(lengthNode);
     changeNode->append("ref-start-score",refStartScore);
     changeNode->append("alt-start-score",altStartScore);
+    const float cutoff=sensors.startCodonSensor->getCutoff();
+    changeNode->append("start-score-cutoff",cutoff);
     changeNode->append("reason",reason);
     changeNode->append(codingTranscript);
     status->append(changeNode);
@@ -801,6 +803,8 @@ void FBI::processAltStructure(AlternativeStructure &s,
       msg2->append(lengthNode);
       msg2->append("ref-start-score",refStartScore);
       msg2->append("alt-start-score",altStartScore);
+      const float cutoff=sensors.startCodonSensor->getCutoff();
+      msg2->append("start-score-cutoff",cutoff);
       msg2->append("reason",reason);
     }
   }

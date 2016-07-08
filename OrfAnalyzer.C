@@ -37,7 +37,6 @@ GffTranscript *OrfAnalyzer::findORF(const GffTranscript &original,
   transcript->forgetCDS();
   transcript->splitUTRandCDS(genomeStr,genomicStartPos,sensors.stopCodons);
   orfLength=transcript->getCDSlength();
-  transcript->toGff(cout);
   return transcript;
 }
 
@@ -87,7 +86,6 @@ Essex::CompositeNode *OrfAnalyzer::noncodingToCoding(
   GffTranscript *altORF=findORF(altTrans,altStr,altSeq,altStartScore,
 				altGenomicStart,altOrfLen);
   bool change=false;
-  cout<<refOrfLen<<" => "<<altOrfLen<<endl;
   if(!refORF && altORF && altOrfLen>=MIN_ORF_LEN)
     { change=true; msg="ref-no-start-codon"; }
   else if(refORF && altORF && refORF<MIN_ORF_LEN && altOrfLen>=MIN_ORF_LEN &&
