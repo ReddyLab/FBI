@@ -683,6 +683,7 @@ void FBI::handleNoncoding(const GffTranscript *altTrans)
   if(codingTranscript) {
     Essex::CompositeNode *changeNode=
       new Essex::CompositeNode("noncoding-to-coding");
+    changeNode->append("reason",reason);
     Essex::CompositeNode *lengthNode=
       new Essex::CompositeNode("ORF-length");
     lengthNode->append(refOrfLen);
@@ -693,7 +694,6 @@ void FBI::handleNoncoding(const GffTranscript *altTrans)
     changeNode->append("alt-start-score",altStartScore);
     const float cutoff=sensors.startCodonSensor->getCutoff();
     changeNode->append("start-score-cutoff",cutoff);
-    changeNode->append("reason",reason);
     changeNode->append(codingTranscript);
     status->append(changeNode);
   }
@@ -795,6 +795,7 @@ void FBI::processAltStructure(AlternativeStructure &s,
 				     altStartScore,reason);
     if(changeToCoding) {
       msg2=new Essex::CompositeNode("noncoding-to-coding");
+      msg2->append("reason",reason);
       Essex::CompositeNode *lengthNode=
 	new Essex::CompositeNode("ORF-length");
       lengthNode->append(refOrfLen);
@@ -805,7 +806,6 @@ void FBI::processAltStructure(AlternativeStructure &s,
       msg2->append("alt-start-score",altStartScore);
       const float cutoff=sensors.startCodonSensor->getCutoff();
       msg2->append("start-score-cutoff",cutoff);
-      msg2->append("reason",reason);
     }
   }
   Essex::CompositeNode *node=NULL;
