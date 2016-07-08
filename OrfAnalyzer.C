@@ -75,7 +75,8 @@ Essex::CompositeNode *OrfAnalyzer::noncodingToCoding(
 				    bool reverseStrand,
 				    int altSeqLen,
 				    float &refStartScore,
-				    float &altStartScore)
+				    float &altStartScore,
+				    String &msg)
 {
   refStartScore=float(NEGATIVE_INFINITY);
   altStartScore=float(NEGATIVE_INFINITY);
@@ -87,10 +88,13 @@ Essex::CompositeNode *OrfAnalyzer::noncodingToCoding(
 				altGenomicStart,altOrfLen);
   bool change=false;
   cout<<refOrfLen<<" => "<<altOrfLen<<endl;
-  if(!refORF && altORF && altOrfLen>=MIN_ORF_LEN) change=true;
+  if(!refORF && altORF && altOrfLen>=MIN_ORF_LEN)
+    { change=true; msg="ref-no-start-codon"; }
   else if(refORF && altORF && refORF<MIN_ORF_LEN && altOrfLen>=MIN_ORF_LEN &&
 	  altOrfLen>=2*refOrfLen)
-    change=true;
+    { change=true; msg="ref-ORF-too-short"; }
+  else if(refORF && altORF && altOrfLen>=MIN_ORF_LEN && altOrfLen>=refOrfLen)
+    { change=true; msg="possible-misannotation"; }
   if(change) {
     altORF->computePhases();
     altORF->loadSequence(altStr);

@@ -35,7 +35,8 @@ public:
 					  bool reverseStrand,
 					  int altSeqLen,
 					  float &refStartScore,
-					  float &altStartScore);
+					  float &altStartScore,
+					  String &msg);
   GffTranscript *earlierStartCodon(const GffTranscript &refTrans,
 				   const String &refStr,
 				   const Sequence &refSeq,
