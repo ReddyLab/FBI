@@ -157,9 +157,7 @@ TranscriptSignals *ProjectionChecker::findBrokenSpliceSites()
 				   refScore,altScore,cutoff);
 	TranscriptSignal &signal=signals->addSignal(AG,altBegin-2,altScore);
 	signal.broken=broken; signal.weakened=weakened;
-	//signal.seq=weakened ? window : consensus;
-	signal.seq=window;
-	signal.refScore=refScore; signal.cutoff=cutoff;
+	signal.seq=window ;signal.refScore=refScore; signal.cutoff=cutoff;
       }
       if(i<numExons-1) {
 	bool weakened; String consensus, window;
@@ -168,9 +166,7 @@ TranscriptSignals *ProjectionChecker::findBrokenSpliceSites()
 				refScore,altScore,cutoff);
 	TranscriptSignal &signal=signals->addSignal(GT,altEnd,altScore);
 	signal.broken=broken; signal.weakened=weakened;
-	//signal.seq=weakened ? window : consensus;
-	signal.seq=window;
-	signal.refScore=refScore; signal.cutoff=cutoff;
+	signal.seq=window; signal.refScore=refScore; signal.cutoff=cutoff;
       }
       else signals->addSignal(TES,altEnd,0.0);
     }
@@ -182,6 +178,60 @@ TranscriptSignals *ProjectionChecker::findBrokenSpliceSites()
   }
   GffTranscript::deleteExons(refExons);
   GffTranscript::deleteExons(altExons);
+  return signals;
+}
+
+
+
+TranscriptSignals *ProjectionChecker::simulateBrokenSpliceSites()
+{
+  Vector<GffExon*> refExons, altExons;
+  refTrans.getRawExons(refExons);
+  altTrans.getRawExons(altExons);
+  if(altTrans.getStrand()!=FORWARD_STRAND) INTERNAL_ERROR;
+  TranscriptSignals *signals=NULL;
+  if(refExons.size()==altExons.size()) {
+    const int numExons=refExons.size();
+    signals=new TranscriptSignals;
+    signals->setID(refTrans.getTranscriptId());
+    signals->setSubstrate(altTrans.getSubstrate());
+    signals->setSource("SIMULATION");
+    signals->setStrand(refTrans.getStrand());
+    signals->setGeneID(refTrans.getGeneId());
+    for(int i=0 ; i<numExons ; ++i) {
+      GffExon &refExon=*refExons[i];
+      GffExon &altExon=*altExons[i];
+      const int altBegin=altExon.getBegin(), altEnd=altExon.getEnd();
+      if(i==0) signals->addSignal(TSS,altBegin,0.0);
+      else { // i>0
+	bool weakened; String consensus, window;
+	float refScore, altScore, cutoff;
+	bool broken=!checkAcceptor(refExon,altExon,weakened,consensus,window,
+				   refScore,altScore,cutoff);
+	TranscriptSignal &signal=signals->addSignal(AG,altBegin-2,altScore);
+	signal.broken=broken; signal.weakened=weakened;
+	signal.seq=window ;signal.refScore=refScore; signal.cutoff=cutoff;
+      }
+      if(i<numExons-1) {
+	bool weakened; String consensus, window;
+	float refScore, altScore, cutoff;
+	bool broken=!checkDonor(refExon,altExon,weakened,consensus,window,
+				refScore,altScore,cutoff);
+	TranscriptSignal &signal=signals->addSignal(GT,altEnd,altScore);
+	signal.broken=broken; signal.weakened=weakened;
+	signal.seq=window; signal.refScore=refScore; signal.cutoff=cutoff;
+      }
+      else signals->addSignal(TES,altEnd,0.0);
+    }
+    bool isCoding=altTrans.numExons()>0; // actually # coding segments
+    if(isCoding) {
+      int start=altTrans.getIthExon(0).getBegin(); // assumes forward strand
+      signals->setStartCodon(start);
+    }
+  }
+  GffTranscript::deleteExons(refExons);
+  GffTranscript::deleteExons(altExons);
+  signals->simulateBroken();
   return signals;
 }
 

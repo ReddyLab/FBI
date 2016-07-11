@@ -33,6 +33,7 @@ public:
 		    const SignalSensors &);
   bool checkSpliceSites(bool quiet);
   TranscriptSignals *findBrokenSpliceSites(); // NULL if bad mapping
+  TranscriptSignals *simulateBrokenSpliceSites();
   bool checkSpliceSiteStrengths();
   bool checkFrameshifts(const Labeling &,const GffTranscript &,
 			const String &substrate,Essex::CompositeNode*);

@@ -389,18 +389,19 @@ void FBI::checkProjection(const String &outGff,
   TranscriptSignals *signals=checker.findBrokenSpliceSites();
   if(!signals) {
     status->prepend("unequal-numbers-of-exons");
-    /*if(!xmlFilename.empty()) writeXML();
-    osFBI<<*root<<endl;
-    osFBI<<"#===========================================================\n";
-    */
-    delete altTrans;
-    return;
-  }
+    delete altTrans; return; }
 
   // Enumerate alternative structures
-  if(signals->anyBroken())
-    { enumerateAlts(altTransEssex,signals,altTrans,osFBI,projectedLab);
-      delete signals; return; }
+  if(signals->anyBroken()) {
+    enumerateAlts(altTransEssex,signals,altTrans,osFBI,projectedLab);
+    delete signals; // ### added 7/11/2016
+    return; }
+  else if(Random0to1()<0.05) {
+    delete signals;
+    signals=checker.simulateBrokenSpliceSites();
+    enumerateAlts(altTransEssex,signals,altTrans,osFBI,projectedLab);
+    delete signals; // ### added 7/11/2016
+    return; }
   if(signals->anyWeakened()) appendBrokenSignals(signals);
   delete signals; // ### added 7/11/2016
 

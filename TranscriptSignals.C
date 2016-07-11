@@ -97,6 +97,16 @@ TranscriptSignals::TranscriptSignals(const GffTranscript &transcript)
 
 
 
+void TranscriptSignals::simulateBroken()
+{
+  const int numSignals=signals.size();
+  const int index=RandomNumber(numSignals);
+  TranscriptSignal &signal=signals[index];
+  signal.broken=true;
+}
+
+
+
 GffTranscript *TranscriptSignals::toTranscript(const String &genome,
 					       const SignalSensors &sensors,
 					       Essex::CompositeNode *&msg)
