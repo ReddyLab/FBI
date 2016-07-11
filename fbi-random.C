@@ -396,12 +396,11 @@ void FBI::checkProjection(const String &outGff,
     enumerateAlts(altTransEssex,signals,altTrans,osFBI,projectedLab);
     delete signals; // ### added 7/11/2016
     return; }
-  else if(Random0to1()<0.07) {
-    //delete signals;
-    //signals=checker.simulateBrokenSpliceSites();
+  else { //if(Random0to1()<0.5) {
     signals->setSource("SIMULATION");
     signals->simulateBroken();
-    enumerateAlts(altTransEssex,signals,altTrans,osFBI,projectedLab);
+    if(signals->anyBroken())
+      enumerateAlts(altTransEssex,signals,altTrans,osFBI,projectedLab);
     delete signals; // ### added 7/11/2016
     return; }
   if(signals->anyWeakened()) appendBrokenSignals(signals);
@@ -923,7 +922,7 @@ void FBI::appendBrokenSignals(const TranscriptSignals *signals)
     if(type==GT) tag=signal.weakened ? "weakened-donor" : "broken-donor";
     else if(type==AG) 
       tag=signal.weakened ? "weakened-acceptor" : "broken-acceptor";
-    else INTERNAL_ERROR;
+    else { cout<<type<<endl; INTERNAL_ERROR; }
     Essex::CompositeNode *node=new Essex::CompositeNode(tag);
     int pos=signal.getPos();
     if(reverseStrand) pos=altSeqLen-pos-2; // -2 is for the signal length!

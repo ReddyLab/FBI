@@ -100,7 +100,7 @@ TranscriptSignals::TranscriptSignals(const GffTranscript &transcript)
 void TranscriptSignals::simulateBroken()
 {
   const int numSignals=signals.size();
-  if(numSignals<2) return;
+  if(numSignals<=2) return;
   const int index=1+RandomNumber(numSignals-2);
   TranscriptSignal &signal=signals[index];
   signal.broken=true;
