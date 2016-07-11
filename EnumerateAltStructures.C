@@ -210,7 +210,7 @@ void EnumerateAltStructures::compute()
     novel.setID(original.getID());
     novel.setGeneID(original.getGeneID());
     novel.setSubstrate(original.getSubstrate());
-    novel.setSource("FBI");
+    novel.setSource(original.getSource()); // ###
     novel.setStrand(original.getStrand());
     novel.setStartCodon(original.getStartCodon());
     for(int i=0 ; i<numSignals ; ++i)

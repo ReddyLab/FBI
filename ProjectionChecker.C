@@ -183,6 +183,7 @@ TranscriptSignals *ProjectionChecker::findBrokenSpliceSites()
 
 
 
+/*
 TranscriptSignals *ProjectionChecker::simulateBrokenSpliceSites()
 {
   Vector<GffExon*> refExons, altExons;
@@ -196,6 +197,7 @@ TranscriptSignals *ProjectionChecker::simulateBrokenSpliceSites()
     signals->setID(refTrans.getTranscriptId());
     signals->setSubstrate(altTrans.getSubstrate());
     signals->setSource("SIMULATION");
+    throw "simulation";
     signals->setStrand(refTrans.getStrand());
     signals->setGeneID(refTrans.getGeneId());
     for(int i=0 ; i<numExons ; ++i) {
@@ -231,9 +233,10 @@ TranscriptSignals *ProjectionChecker::simulateBrokenSpliceSites()
   }
   GffTranscript::deleteExons(refExons);
   GffTranscript::deleteExons(altExons);
-  signals->simulateBroken();
+  if(signals) signals->simulateBroken();
   return signals;
 }
+*/
 
 
 

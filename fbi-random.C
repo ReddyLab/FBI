@@ -396,9 +396,11 @@ void FBI::checkProjection(const String &outGff,
     enumerateAlts(altTransEssex,signals,altTrans,osFBI,projectedLab);
     delete signals; // ### added 7/11/2016
     return; }
-  else if(Random0to1()<0.05) {
-    delete signals;
-    signals=checker.simulateBrokenSpliceSites();
+  else if(Random0to1()<0.07) {
+    //delete signals;
+    //signals=checker.simulateBrokenSpliceSites();
+    signals->setSource("SIMULATION");
+    signals->simulateBroken();
     enumerateAlts(altTransEssex,signals,altTrans,osFBI,projectedLab);
     delete signals; // ### added 7/11/2016
     return; }
