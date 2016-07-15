@@ -38,7 +38,8 @@ while(1) {
     for(my $i=0 ; $i<$n ; ++$i) {
       my $transcript=$transcripts->[$i];
       my $id=$transcript->getTranscriptId();
-      $id="ALT$i\_$id\_$hap";
+      if($transcript->getSource() eq "SIMULATION") { $id="SIM$i\_$id\_$hap" }
+      else { $id="ALT$i\_$id\_$hap" }
       $transcript->setTranscriptId($id);
       $id=$transcript->getGeneId();
       $id.="_$hap";
