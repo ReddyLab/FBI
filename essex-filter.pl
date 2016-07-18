@@ -19,7 +19,7 @@ while(1) {
   my $report=$parser->nextElem();
   last unless $report;
   my $status=$report->findChild("status");
-  my $transcriptID=$status->getAttribute("transcript-ID");
+  my $transcriptID=$report->getAttribute("transcript-ID");
   next if $seen{$transcriptID};
   $seen{$transcriptID}=1;
   next unless $status;
