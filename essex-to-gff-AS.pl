@@ -47,6 +47,19 @@ while(1) {
       print OUT $transcript->toGff();
     }
   }
+  elsif($status eq "mapped") {
+    my $newStartTranscript=
+      $root->pathQuery("report/status/new-upstream-start-codon/transcript");
+    if($newStartTranscript) {
+      my $id=$transcript->getTranscriptId();
+      $id="NEWSTART_$id\_$hap";
+      $transcript->setTranscriptId($id);
+      $id=$transcript->getGeneId();
+      $id.="_$hap";
+      $transcript->setGeneId($id);
+      print OUT $transcript->toGff();
+    }
+  }
   undef $root; undef $fbi;
 }
 close(OUT);
