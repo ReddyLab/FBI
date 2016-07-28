@@ -762,7 +762,7 @@ void FBI::processAltStructure(AlternativeStructure &s,
 				     oldStartStr, newStartStr,
 				     reverseStrand,altSeqLen,reason);
     if(newTranscript) {
-      if(reverseStrand) {
+      if(reverseStrand) { // added 7/28/2016
 	GffTranscript temp(*newTranscript);
 	temp.reverseComplement(altSeqLen);
 	changeToCoding=temp.toEssex();
