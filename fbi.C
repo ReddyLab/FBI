@@ -762,7 +762,12 @@ void FBI::processAltStructure(AlternativeStructure &s,
 				     oldStartStr, newStartStr,
 				     reverseStrand,altSeqLen,reason);
     if(newTranscript) {
-      changeToCoding=newTranscript->toEssex();
+      if(reverseStrand) {
+	GffTranscript temp(*newTranscript);
+	temp.reverseComplement(altSeqLen);
+	changeToCoding=temp.toEssex();
+      } else changeToCoding=newTranscript->toEssex();
+      //changeToCoding=newTranscript->toEssex();
       msg2=
 	new Essex::CompositeNode("new-upstream-start-codon");
       const float cutoff=sensors.startCodonSensor->getCutoff();

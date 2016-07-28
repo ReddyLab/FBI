@@ -50,5 +50,5 @@ while(1) {
   undef $root; undef $fbi;
 }
 close(OUT);
-
+print "[done]\n";
 

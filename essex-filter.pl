@@ -41,4 +41,6 @@ print "bad-annotation $badAnnos\n";
 print "too-many-vcf-errors $vcfErrors\n";
 print "mapped $mapped\n";
 print "retained $kept\n";
+print STDERR "[done]\n";
+
 
